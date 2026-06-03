@@ -1,0 +1,13 @@
+[project]
+name = "tripsecure-flightdelay-mvp"
+version = "0.1.0"
+description = "TripSecure+ flight-delay monitoring & notification MVP (Product 4233). Monitoring only; no payments."
+requires-python = ">=3.11"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
