@@ -1,7 +1,17 @@
-"""Flight lifecycle states and customer-facing event types. Pure data — no I/O."""
+"""Flight lifecycle states, event types, and brain config. Pure data — no I/O."""
 from __future__ import annotations
 
+from dataclasses import dataclass
 from enum import Enum
+
+
+@dataclass(frozen=True)
+class BrainConfig:
+    """Thresholds in minutes. Populated from app.config.settings — never hardcoded in logic."""
+    delay_t1_min: int
+    delay_t2_min: int
+    delay_t3_min: int
+    recovery_buffer_min: int
 
 
 class FlightState(str, Enum):

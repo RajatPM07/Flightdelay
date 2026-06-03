@@ -3,9 +3,6 @@ The Brain — pure, I/O-free decision engine. THE ASSET.
 
 MUST NOT import any vendor SDK, database, or httpx. It is given the current state and a
 normalised status snapshot, and returns a Decision. Everything is unit-testable offline.
-
-Implement `decide()` so that tests/test_brain.py (the canonical 7-event sequence) passes
-BEFORE any external integration is built.
 """
 from __future__ import annotations
 
@@ -13,16 +10,11 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Optional
 
-from app.domain.states import EventType, FlightState
+from app.domain.materiality import crossed_upward, recovered_to_on_time, tier_for_delay
+from app.domain.states import BrainConfig, EventType, FlightState, TERMINAL_STATES
 
-
-@dataclass(frozen=True)
-class BrainConfig:
-    """Thresholds in minutes. Populated from app.config.settings — never hardcoded in logic."""
-    delay_t1_min: int
-    delay_t2_min: int
-    delay_t3_min: int
-    recovery_buffer_min: int
+# Re-export BrainConfig so existing `from app.domain.brain import BrainConfig` imports keep working.
+__all__ = ["BrainConfig", "FlightStatus", "Decision", "decide"]
 
 
 @dataclass(frozen=True)
@@ -48,6 +40,24 @@ class Decision:
     payout_recommendation: None = None
 
 
+_TIER_EVENT = {
+    FlightState.DELAYED_T1: EventType.DELAY_TIER_1,
+    FlightState.DELAYED_T2: EventType.DELAY_TIER_2,
+    FlightState.DELAYED_T3: EventType.DELAY_TIER_3,
+}
+
+
+def _silent(state: FlightState) -> Decision:
+    return Decision(state, False, EventType.NONE)
+
+
+def _delay_minutes(status: FlightStatus) -> Optional[int]:
+    ref = status.estimated_in_utc or status.actual_in_utc
+    if ref is None:
+        return None
+    return int((ref - status.scheduled_in_utc).total_seconds() / 60)
+
+
 def decide(
     current_state: FlightState,
     last_known: Optional[FlightStatus],
@@ -57,13 +67,57 @@ def decide(
     """
     Decide the next state and whether to notify, given an incoming status update.
 
-    Required behaviour (see tests/test_brain.py and claude_code_prompt.md):
-      - Dedup / out-of-order: drop incoming if event_ts <= last_known.event_ts, or if
-        content_hash matches the last processed one -> Decision(current_state, False, NONE).
-      - delay_minutes = (estimated_in_utc or actual_in_utc) - scheduled_in_utc.
-        Use gate arrival; ignore runway touchdown.
-      - Tier escalation with hysteresis; BACK_ON_SCHEDULE only below (tier - recovery buffer).
-      - cancelled / diverted / departed / landed -> their notifiable event types.
-      - Anything not material -> Decision(current_state, False, NONE) (silent log).
+    Rules:
+    - Terminal state: ignore all further events.
+    - Dedup: drop if event_ts <= last_known.event_ts (out-of-order), or content_hash matches.
+    - Priority: landed > cancelled > diverted > first-departure > delay tiers > silent.
+    - Tier escalation notifies; same-tier wobble is silent. Recovery to ON_TIME only when
+      delay drops below (T1 - recovery_buffer); no intermediate tier-step notifications.
     """
-    raise NotImplementedError("Milestone 2: implement the brain and make test_brain.py pass.")
+    if current_state in TERMINAL_STATES:
+        return _silent(current_state)
+
+    if last_known is not None:
+        if incoming.event_ts <= last_known.event_ts:
+            return _silent(current_state)
+        if incoming.content_hash and incoming.content_hash == last_known.content_hash:
+            return _silent(current_state)
+
+    # Landed: actual gate-arrival time is set (chocks-on, not runway touchdown).
+    if incoming.actual_in_utc is not None:
+        return Decision(
+            FlightState.LANDED, True, EventType.LANDED,
+            {"delay_min": _delay_minutes(incoming)},
+        )
+
+    if incoming.cancelled:
+        return Decision(FlightState.CANCELLED, True, EventType.CANCELLED)
+
+    if incoming.diverted:
+        return Decision(FlightState.DIVERTED, True, EventType.DIVERTED)
+
+    # First departure event: notify with updated ETA context.
+    if incoming.departed and current_state != FlightState.DEPARTED:
+        return Decision(
+            FlightState.DEPARTED, True, EventType.DEPARTED,
+            {"delay_min": _delay_minutes(incoming)},
+        )
+
+    # Once departed, only a landed event (above) matters.
+    if current_state == FlightState.DEPARTED:
+        return _silent(current_state)
+
+    # Delay tier logic (flight not yet departed).
+    delay = _delay_minutes(incoming)
+    if delay is None:
+        return _silent(current_state)
+
+    new_tier = tier_for_delay(delay, config)
+
+    if crossed_upward(current_state, new_tier):
+        return Decision(new_tier, True, _TIER_EVENT[new_tier], {"delay_min": delay})
+
+    if recovered_to_on_time(delay, current_state, config):
+        return Decision(FlightState.ON_TIME, True, EventType.BACK_ON_SCHEDULE, {"delay_min": delay})
+
+    return _silent(current_state)
