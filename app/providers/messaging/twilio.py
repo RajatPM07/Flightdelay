@@ -27,8 +27,10 @@ class TwilioProvider(MessageProvider):
         Returns the Twilio message SID.
         """
         if channel == Channel.WHATSAPP:
-            from_addr = f"whatsapp:{self.whatsapp_from}"
-            to_addr = f"whatsapp:{to}"
+            # Idempotent prefixing — the configured number may or may not already
+            # carry the "whatsapp:" scheme (the .env convention varies).
+            from_addr = f"whatsapp:{self.whatsapp_from.removeprefix('whatsapp:')}"
+            to_addr = f"whatsapp:{to.removeprefix('whatsapp:')}"
         else:
             from_addr = self.sms_from
             to_addr = to
