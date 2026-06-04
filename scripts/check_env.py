@@ -46,6 +46,16 @@ def check() -> int:
     errors: list[str] = []
     warnings: list[str] = []
 
+    mock_mode = os.getenv("MOCK_PROVIDERS", "").strip().lower() in ("true", "1")
+
+    print("\n── TripSecure+ Flight Delay — pre-flight env check ──\n")
+
+    if mock_mode:
+        print("✓  Mock Provider Mode is ACTIVE (MOCK_PROVIDERS=True).")
+        print("   External API keys (AeroAPI, Twilio, SendGrid) are bypassed.")
+        print("   DATABASE_URL will default to local SQLite if unset.\n")
+        return 0
+
     # Required vars.
     for var, description in REQUIRED.items():
         val = os.getenv(var, "").strip()
@@ -74,8 +84,6 @@ def check() -> int:
             f"  REMINDER  ngrok URL detected ({webhook_url!r}). "
             "Make sure `ngrok http 8000` is running and this URL is current."
         )
-
-    print("\n── TripSecure+ Flight Delay — pre-flight env check ──\n")
 
     if warnings:
         print("Warnings:")

@@ -13,6 +13,7 @@ from app.providers.flightdata.flightaware import FlightAwareProvider
 from app.providers.messaging.base import MessageProvider
 from app.providers.messaging.email import EmailProvider
 from app.providers.messaging.twilio import TwilioProvider
+from app.providers.mock import MockFlightDataProvider, MockMessageProvider
 
 
 def get_db() -> Generator[Session, None, None]:
@@ -37,12 +38,17 @@ _msg_provider: MessageProvider | None = None
 def get_flight_provider() -> FlightDataProvider:
     global _flight_provider
     if _flight_provider is None:
-        _flight_provider = FlightAwareProvider(
-            api_key=settings.flightaware_api_key,
-            base_url=settings.flightaware_base_url,
-            webhook_secret=settings.flightaware_webhook_secret,
-            public_webhook_base_url=settings.public_webhook_base_url,
-        )
+        if settings.mock_providers:
+            _flight_provider = MockFlightDataProvider(
+                webhook_secret=settings.flightaware_webhook_secret
+            )
+        else:
+            _flight_provider = FlightAwareProvider(
+                api_key=settings.flightaware_api_key,
+                base_url=settings.flightaware_base_url,
+                webhook_secret=settings.flightaware_webhook_secret,
+                public_webhook_base_url=settings.public_webhook_base_url,
+            )
     return _flight_provider
 
 
@@ -65,16 +71,19 @@ class _CompositeMessageProvider(MessageProvider):
 def get_msg_provider() -> MessageProvider:
     global _msg_provider
     if _msg_provider is None:
-        _msg_provider = _CompositeMessageProvider(
-            twilio=TwilioProvider(
-                account_sid=settings.twilio_account_sid,
-                auth_token=settings.twilio_auth_token,
-                whatsapp_from=settings.twilio_whatsapp_from,
-                sms_from=settings.twilio_sms_from,
-            ),
-            email=EmailProvider(
-                sendgrid_api_key=settings.sendgrid_api_key,
-                email_from=settings.email_from,
-            ),
-        )
+        if settings.mock_providers:
+            _msg_provider = MockMessageProvider()
+        else:
+            _msg_provider = _CompositeMessageProvider(
+                twilio=TwilioProvider(
+                    account_sid=settings.twilio_account_sid,
+                    auth_token=settings.twilio_auth_token,
+                    whatsapp_from=settings.twilio_whatsapp_from,
+                    sms_from=settings.twilio_sms_from,
+                ),
+                email=EmailProvider(
+                    sendgrid_api_key=settings.sendgrid_api_key,
+                    email_from=settings.email_from,
+                ),
+            )
     return _msg_provider

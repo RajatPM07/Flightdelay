@@ -9,6 +9,7 @@ class Settings(BaseSettings):
 
     app_env: str = "development"
     log_level: str = "INFO"
+    mock_providers: bool = False
 
     database_url: str = ""
 

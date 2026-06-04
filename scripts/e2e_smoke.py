@@ -44,6 +44,11 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
+# Make the project root importable so `from app.models import ...` works when this
+# file is run directly as `python scripts/e2e_smoke.py` (Python otherwise only adds
+# the scripts/ dir to sys.path, not the project root).
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
 # Load .env before importing app modules.
 try:
     from dotenv import load_dotenv
