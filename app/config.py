@@ -1,6 +1,7 @@
 """Central configuration. All brain thresholds live here — never hardcode them in logic."""
 from __future__ import annotations
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -10,6 +11,7 @@ class Settings(BaseSettings):
     app_env: str = "development"
     log_level: str = "INFO"
     mock_providers: bool = False
+    mock_messaging: bool | None = None
     demo_mode: bool = False
 
     database_url: str = ""
@@ -43,6 +45,12 @@ class Settings(BaseSettings):
     delay_t3_min: int = 120
     recovery_buffer_min: int = 15
     backstop_hours: int = 24
+
+    @model_validator(mode="after")
+    def _default_mock_messaging(self) -> "Settings":
+        if self.mock_messaging is None:
+            self.mock_messaging = self.mock_providers
+        return self
 
 
 settings = Settings()

@@ -80,7 +80,7 @@ class _CompositeMessageProvider(MessageProvider):
 def get_msg_provider() -> MessageProvider:
     global _msg_provider
     if _msg_provider is None:
-        if settings.mock_providers:
+        if settings.mock_messaging:
             _msg_provider = MockMessageProvider()
         else:
             _msg_provider = _CompositeMessageProvider(
