@@ -54,6 +54,7 @@
     /* ── Phone frame ── */
     .phone-shell {
       width: 360px;
+      max-width: calc(100vw - 32px);
       min-height: 700px;
       background: #111625;
       border-radius: 40px;
@@ -209,9 +210,11 @@
     /* ── Motion path particle ── */
     #particle {
       width: 14px; height: 14px;
-      background: #B02A30;
+      background: radial-gradient(circle at 35% 35%, #fff 0 12%, #F99D27 13% 38%, #B02A30 39% 100%);
       border-radius: 50%;
-      box-shadow: 0 0 18px 4px rgba(176,42,48,0.8);
+      box-shadow:
+        0 0 18px 4px rgba(176,42,48,0.8),
+        0 0 36px 10px rgba(249,157,39,0.22);
       position: fixed;
       pointer-events: none;
       z-index: 100;
@@ -309,6 +312,54 @@
       display: none;
     }
     .terminal-chip.visible { display: inline-flex; }
+
+    @media (max-width: 640px) {
+      header {
+        padding: 14px 16px;
+        gap: 12px;
+        align-items: flex-start;
+      }
+      .phone-shell {
+        width: 100%;
+        min-height: auto;
+        border-radius: 30px;
+        padding: 52px 16px 26px;
+      }
+      .card {
+        border-radius: 12px;
+        padding: 16px;
+      }
+      #flight-summary {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+      #flight-summary > div:last-child {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      #stepper {
+        gap: 0;
+      }
+      .stepper-node {
+        width: 34px;
+        height: 34px;
+      }
+      .stepper-line {
+        min-width: 18px;
+      }
+      #stepper-card .flex.justify-between.mt-2 span {
+        font-size: 10px;
+      }
+      #contact-strip {
+        left: 16px;
+        right: 16px;
+        bottom: 12px;
+        justify-content: center;
+      }
+    }
   </style>
 </head>
 <body class="font-body bg-canvas min-h-screen">
@@ -771,15 +822,31 @@
       // Get approximate screen positions
       const phoneRect = document.getElementById('issue-form').getBoundingClientRect();
       const dashRect  = document.getElementById('dashboard').getBoundingClientRect();
+      const stacked = dashRect.top > phoneRect.bottom - 24;
 
-      const startX = phoneRect.right - 20;
-      const startY = phoneRect.top + phoneRect.height / 2;
-      const endX   = dashRect.left + 60;
-      const endY   = dashRect.top  + 60;
+      const startX = stacked ? phoneRect.left + phoneRect.width / 2 : phoneRect.right - 18;
+      const startY = stacked ? phoneRect.bottom - 28 : phoneRect.top + phoneRect.height / 2;
+      const endX   = stacked ? dashRect.left + dashRect.width / 2 : dashRect.left + 60;
+      const endY   = stacked ? dashRect.top + 34 : dashRect.top + 60;
+      const dx = endX - startX;
+      const dy = endY - startY;
+      const path = stacked
+        ? [
+            { x: 0, y: 0 },
+            { x: dx * 0.18, y: dy * 0.28 },
+            { x: dx * 0.82, y: dy * 0.72 },
+            { x: dx, y: dy },
+          ]
+        : [
+            { x: 0, y: 0 },
+            { x: dx * 0.5, y: Math.min(-80, dy * 0.35) },
+            { x: dx, y: dy },
+          ];
 
       particle.style.left    = `${startX}px`;
       particle.style.top     = `${startY}px`;
       particle.style.display = 'block';
+      gsap.set(particle, { x: 0, y: 0, opacity: 1, scale: 1 });
 
       const tl = gsap.timeline({
         onComplete: () => {
@@ -791,17 +858,13 @@
 
       // Particle travels from phone to dashboard
       tl.to(particle, {
-        x: endX - startX,
-        y: endY - startY,
+        x: dx,
+        y: dy,
         duration: 0.7,
         ease: 'power2.inOut',
         motionPath: {
-          path: [
-            { x: 0, y: 0 },
-            { x: (endX - startX) * 0.5, y: -80 },
-            { x: endX - startX, y: endY - startY },
-          ],
-          curviness: 1.5,
+          path,
+          curviness: stacked ? 1.15 : 1.5,
         },
       });
 
@@ -1095,6 +1158,9 @@
             body:    JSON.stringify({ policy_id: policyId, event: btn.dataset.event }),
           });
           const data = await res.json();
+          if (!res.ok) {
+            throw new Error(data.detail || `HTTP ${res.status}`);
+          }
 
           // Pretty-print to console
           consolePre.textContent = JSON.stringify(data, null, 2);
@@ -1118,6 +1184,10 @@
       const today = new Date().toISOString().slice(0, 10);
       document.getElementById('f-date').value = today;
     })();
+
+    window.addEventListener('beforeunload', () => {
+      if (pollTimer) clearInterval(pollTimer);
+    });
 
   </script>
 </body>
