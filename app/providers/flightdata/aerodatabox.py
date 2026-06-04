@@ -27,6 +27,7 @@ import httpx
 
 from app.domain.brain import FlightStatus
 from app.providers.flightdata.base import FlightDataProvider
+from app.providers.flightdata.carriers import normalize_flight_number
 
 logger = logging.getLogger(__name__)
 
@@ -43,11 +44,6 @@ def _parse_adb_dt(value: Optional[str]) -> Optional[datetime]:
     if not value:
         return None
     return datetime.fromisoformat(value.replace(" ", "T").replace("Z", "+00:00"))
-
-
-def _norm_number(number: str) -> str:
-    """Strip spaces and uppercase — e.g. '6E 1341' -> '6E1341'."""
-    return number.replace(" ", "").upper()
 
 
 def _unwrap(raw: dict) -> dict:
@@ -108,7 +104,7 @@ class AeroDataBoxProvider(FlightDataProvider):
 
     async def get_baseline(self, flight_number: str, flight_date: str) -> FlightStatus:
         """One-shot lookup at issuance."""
-        url = f"{self.base_url}/flights/number/{_norm_number(flight_number)}/{flight_date}"
+        url = f"{self.base_url}/flights/number/{normalize_flight_number(flight_number)}/{flight_date}"
         params = {"withAircraftImage": "false", "withLocation": "false"}
 
         logger.info(
@@ -142,7 +138,7 @@ class AeroDataBoxProvider(FlightDataProvider):
         self, policy_id: str, flight_number: str, flight_date: str
     ) -> str:
         """Subscribe to AeroDataBox webhook for this flight number."""
-        normed = _norm_number(flight_number)
+        normed = normalize_flight_number(flight_number)
         url = f"{self.base_url}/subscriptions/webhook/FlightByNumber/{normed}"
         webhook_url = (
             f"{self.public_webhook_base_url}/webhooks/aerodatabox/{self.webhook_secret}"
@@ -292,7 +288,7 @@ class AeroDataBoxProvider(FlightDataProvider):
         if not date:
             return None
 
-        return (_norm_number(number), date)
+        return (normalize_flight_number(number), date)
 
     def verify_signature(self, body_bytes: bytes, signature_header: str) -> bool:
         """AeroDataBox uses a URL-secret model: the secret is a path segment in the

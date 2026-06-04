@@ -82,6 +82,11 @@ IATA_TO_ICAO: dict[str, str] = {
 _IDENT_RE = re.compile(r"^([A-Z0-9]{2,3}?)(\d{1,4}[A-Z]?)$")
 
 
+def normalize_flight_number(number: str) -> str:
+    """Canonical form for flight-number matching: strip spaces, uppercase."""
+    return number.replace(" ", "").upper()
+
+
 def resolve_icao_ident(flight_number: str) -> str:
     """
     Return the ICAO ident AeroAPI expects, given a customer-entered flight number.

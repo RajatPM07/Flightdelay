@@ -4,10 +4,11 @@ from sqlmodel import Session, select
 from app.models import FlightSubscription, FlightStateRow, Policy
 from app.domain.states import TERMINAL_STATES  # set of FlightState
 from app.providers.flightdata.base import FlightDataProvider
+from app.providers.flightdata.carriers import normalize_flight_number
 
 
 def _norm(number: str) -> str:
-    return number.replace(" ", "").upper()
+    return normalize_flight_number(number)
 
 
 def _active_count(db: Session, flight_number: str, exclude_policy: str | None = None) -> int:

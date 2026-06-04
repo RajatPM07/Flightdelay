@@ -25,6 +25,7 @@ from app.domain.brain import FlightStatus, decide
 from app.domain.states import BrainConfig, EventType, FlightState, TERMINAL_STATES
 from app.models import EventLog, FlightStateRow, Policy
 from app.providers.flightdata.base import FlightDataProvider
+from app.providers.flightdata.carriers import normalize_flight_number
 from app.providers.messaging.base import MessageProvider
 from app.services.audit import append_event_log
 from app.services.notifier import send_notification
@@ -70,6 +71,35 @@ async def process_webhook(
         logger.info("webhook.unknown_alert", extra={"alert_id": alert_id})
         return
 
+    # 4. Terminal-state shortcut — skip normalise entirely (avoids raises on stripped payloads).
+    if FlightState(state_row.current_state) in TERMINAL_STATES:
+        logger.info("webhook.terminal_noop", extra={"policy_id": state_row.policy_id, "state": state_row.current_state})
+        return
+
+    # 5–12. Normalise and process.
+    incoming: FlightStatus = provider.normalise(raw_payload)
+    await _process_for_policy(
+        state_row=state_row,
+        incoming=incoming,
+        db=db,
+        provider=provider,
+        config=config,
+        msg_provider=msg_provider,
+        raw_payload=raw_payload,
+    )
+
+
+async def _process_for_policy(
+    *,
+    state_row: FlightStateRow,
+    incoming: FlightStatus,
+    db: Session,
+    provider,
+    config: BrainConfig,
+    msg_provider: Optional[MessageProvider] = None,
+    raw_payload: Optional[dict] = None,
+) -> None:
+    """Per-policy processing core (steps 4–12). Receives an already-normalised FlightStatus."""
     policy_id = state_row.policy_id
     policy = db.get(Policy, policy_id)
     flight_number_for_policy = policy.flight_number if policy else ""
@@ -83,21 +113,18 @@ async def process_webhook(
         )
         return
 
-    # 5. Normalise raw payload into vendor-agnostic FlightStatus.
-    incoming: FlightStatus = provider.normalise(raw_payload)
-
-    # 6. Reconstruct last_known from persisted snapshot.
+    # 5. Reconstruct last_known from persisted snapshot.
     last_known: Optional[FlightStatus] = (
         _dict_to_status(state_row.last_known_status)
         if state_row.last_known_status
         else None
     )
 
-    # 7. Classify whether this is a duplicate before calling the brain (needed for
+    # 6. Classify whether this is a duplicate before calling the brain (needed for
     #    deciding whether to advance last_known_status after a silent decision).
     is_dedup = _is_dedup(incoming, last_known)
 
-    # 8. Brain decision.
+    # 7. Brain decision.
     decision = decide(current_state, last_known, incoming, config)
 
     logger.info(
@@ -112,19 +139,19 @@ async def process_webhook(
         },
     )
 
-    # 9. Audit log — always written, even for silent/dedup events.
+    # 8. Audit log — always written, even for silent/dedup events.
     log = append_event_log(
         db=db,
         policy_id=policy_id,
-        source="flightaware_webhook",
-        raw_payload=raw_payload,
+        source=f"{provider.name}_webhook",
+        raw_payload=raw_payload or {},
         prev_state=current_state.value,
         new_state=decision.new_state.value,
         decided_event_type=decision.event_type.value,
         notified=decision.should_notify,
     )
 
-    # 10. Persist state update.
+    # 9. Persist state update.
     #     - State changed → always update snapshot.
     #     - Silent but NOT a dedup → advance snapshot so brain has a fresh reference.
     #     - True dedup → leave snapshot untouched (keep the brain's reference stable).
@@ -146,7 +173,7 @@ async def process_webhook(
     log_id: int = log.id
     db.commit()
 
-    # 11. Deregister alert + cancel backstop on terminal transition.
+    # 10. Deregister alert + cancel backstop on terminal transition.
     if entering_terminal:
         if provider.subscription_scope == "per_policy":
             if alert_id:
@@ -156,7 +183,7 @@ async def process_webhook(
             await release_subscription(db, provider, flight_number_for_policy, policy_id)
         cancel_backstop(policy_id)
 
-    # 12. Notify via MessageProvider (idempotent: notifier checks EventLog.notification_id).
+    # 11. Notify via MessageProvider (idempotent: notifier checks EventLog.notification_id).
     if decision.should_notify and msg_provider is not None:
         await send_notification(
             policy_id=policy_id,
@@ -164,6 +191,52 @@ async def process_webhook(
             message_context=decision.message_context,
             event_log_id=log_id,
             db=db,
+            msg_provider=msg_provider,
+        )
+
+
+async def process_aerodatabox_webhook(
+    *,
+    raw_payload: dict,
+    raw_body: bytes,
+    signature_header: str,
+    db: Session,
+    provider,
+    config: BrainConfig,
+    msg_provider: Optional[MessageProvider] = None,
+) -> None:
+    """Fan-out AeroDataBox webhook to ALL active policies for the flight number + date."""
+    if not provider.verify_signature(raw_body, signature_header):
+        logger.warning("aerodatabox.signature_invalid")
+        return
+    subj = provider.extract_subject(raw_payload)
+    if subj is None:
+        logger.warning("aerodatabox.no_subject", extra={"keys": list(raw_payload.keys())})
+        return
+    number, date = subj
+    incoming: FlightStatus = provider.normalise(raw_payload)
+    # Match active (non-terminal) policies by NORMALISED flight number + origin-local date.
+    terminal_values = [s.value for s in TERMINAL_STATES]
+    rows = db.exec(
+        select(FlightStateRow, Policy)
+        .join(Policy, Policy.policy_id == FlightStateRow.policy_id)
+        .where(FlightStateRow.current_state.notin_(terminal_values))
+    ).all()
+    matches = [
+        sr for sr, pol in rows
+        if normalize_flight_number(pol.flight_number) == number and pol.flight_date == date
+    ]
+    if not matches:
+        logger.info("aerodatabox.no_active_policy", extra={"number": number, "date": date})
+        return
+    for state_row in matches:
+        await _process_for_policy(
+            state_row=state_row,
+            incoming=incoming,
+            raw_payload=raw_payload,
+            db=db,
+            provider=provider,
+            config=config,
             msg_provider=msg_provider,
         )
 
