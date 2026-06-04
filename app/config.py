@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     app_env: str = "development"
     log_level: str = "INFO"
     mock_providers: bool = False
+    demo_mode: bool = False
 
     database_url: str = ""
 
