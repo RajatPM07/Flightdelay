@@ -10,6 +10,9 @@ from app.db import engine
 from app.domain.states import BrainConfig
 from app.providers.flightdata.base import FlightDataProvider
 from app.providers.flightdata.flightaware import FlightAwareProvider
+from app.providers.messaging.base import MessageProvider
+from app.providers.messaging.email import EmailProvider
+from app.providers.messaging.twilio import TwilioProvider
 
 
 def get_db() -> Generator[Session, None, None]:
@@ -26,8 +29,9 @@ def get_brain_config() -> BrainConfig:
     )
 
 
-# Singleton — constructed once per process; relies on settings being populated at startup.
+# Singletons — constructed once per process; rely on settings being populated at startup.
 _flight_provider: FlightDataProvider | None = None
+_msg_provider: MessageProvider | None = None
 
 
 def get_flight_provider() -> FlightDataProvider:
@@ -40,3 +44,37 @@ def get_flight_provider() -> FlightDataProvider:
             public_webhook_base_url=settings.public_webhook_base_url,
         )
     return _flight_provider
+
+
+class _CompositeMessageProvider(MessageProvider):
+    """Routes WHATSAPP/SMS to Twilio and EMAIL to SendGrid."""
+
+    def __init__(self, twilio: TwilioProvider, email: EmailProvider) -> None:
+        self._twilio = twilio
+        self._email = email
+
+    async def send(
+        self, channel: "Channel", to: str, body: str, subject: str | None = None  # noqa: F821
+    ) -> str:
+        from app.providers.messaging.base import Channel
+        if channel in (Channel.WHATSAPP, Channel.SMS):
+            return await self._twilio.send(channel, to, body, subject)
+        return await self._email.send(channel, to, body, subject)
+
+
+def get_msg_provider() -> MessageProvider:
+    global _msg_provider
+    if _msg_provider is None:
+        _msg_provider = _CompositeMessageProvider(
+            twilio=TwilioProvider(
+                account_sid=settings.twilio_account_sid,
+                auth_token=settings.twilio_auth_token,
+                whatsapp_from=settings.twilio_whatsapp_from,
+                sms_from=settings.twilio_sms_from,
+            ),
+            email=EmailProvider(
+                sendgrid_api_key=settings.sendgrid_api_key,
+                email_from=settings.email_from,
+            ),
+        )
+    return _msg_provider

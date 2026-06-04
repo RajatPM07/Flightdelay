@@ -1,5 +1,5 @@
 """
-Webhook service: normalise → load state → brain.decide() → audit → persist → notify stub.
+Webhook service: normalise → load state → brain.decide() → audit → persist → notify.
 
 Idempotency contract:
   - The brain's dedup guard (event_ts / content_hash) is the primary idempotency mechanism.
@@ -7,7 +7,7 @@ Idempotency contract:
     reference point stable for the next real event).
   - Genuine silent events (new timestamp, new hash, but not material): audit written,
     last_known_status advanced so the brain has the freshest snapshot next time.
-  - Notify writes are deferred to the Notifier (Milestone 6) via a stub here.
+  - Notification idempotency: notifier checks EventLog.notification_id before sending.
 
 Error handling:
   - Any exception is caught at the route level and logged; the route always returns 200
@@ -25,7 +25,9 @@ from app.domain.brain import FlightStatus, decide
 from app.domain.states import BrainConfig, EventType, FlightState, TERMINAL_STATES
 from app.models import EventLog, FlightStateRow
 from app.providers.flightdata.base import FlightDataProvider
+from app.providers.messaging.base import MessageProvider
 from app.services.audit import append_event_log
+from app.services.notifier import send_notification
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +44,7 @@ async def process_webhook(
     db: Session,
     provider: FlightDataProvider,
     config: BrainConfig,
+    msg_provider: Optional[MessageProvider] = None,
 ) -> None:
     """
     Full webhook pipeline. Raises nothing — callers should catch all exceptions and
@@ -107,7 +110,7 @@ async def process_webhook(
     )
 
     # 9. Audit log — always written, even for silent/dedup events.
-    append_event_log(
+    log = append_event_log(
         db=db,
         policy_id=policy_id,
         source="flightaware_webhook",
@@ -129,19 +132,21 @@ async def process_webhook(
         state_row.last_known_status = _status_to_dict(incoming)
         db.add(state_row)
 
+    # Flush to assign log.id before commit; the notifier needs it for idempotency.
+    db.flush()
+    log_id: int = log.id
     db.commit()
 
-    # 11. Notify — wired in Milestone 6.
-    if decision.should_notify:
-        logger.info(
-            "webhook.notify_stub",
-            extra={
-                "policy_id": policy_id,
-                "event_type": decision.event_type.value,
-                "context": decision.message_context,
-            },
+    # 11. Notify via MessageProvider (idempotent: notifier checks EventLog.notification_id).
+    if decision.should_notify and msg_provider is not None:
+        await send_notification(
+            policy_id=policy_id,
+            event_type=decision.event_type,
+            message_context=decision.message_context,
+            event_log_id=log_id,
+            db=db,
+            msg_provider=msg_provider,
         )
-        # Milestone 6: await notifier.send(policy_id, decision, db)
 
 
 # ------------------------------------------------------------------

@@ -6,9 +6,10 @@ import logging
 from fastapi import APIRouter, Depends, Request
 from sqlmodel import Session
 
-from app.deps import get_brain_config, get_db, get_flight_provider
+from app.deps import get_brain_config, get_db, get_flight_provider, get_msg_provider
 from app.domain.states import BrainConfig
 from app.providers.flightdata.base import FlightDataProvider
+from app.providers.messaging.base import MessageProvider
 from app.services.webhook import process_webhook
 
 logger = logging.getLogger(__name__)
@@ -24,6 +25,7 @@ async def flightaware_alert(
     db: Session = Depends(get_db),
     provider: FlightDataProvider = Depends(get_flight_provider),
     config: BrainConfig = Depends(get_brain_config),
+    msg_provider: MessageProvider = Depends(get_msg_provider),
 ) -> dict:
     """
     Receive a FlightAware AeroAPI push alert.
@@ -48,6 +50,7 @@ async def flightaware_alert(
             db=db,
             provider=provider,
             config=config,
+            msg_provider=msg_provider,
         )
     except Exception:
         logger.exception("webhook.processing_error")
