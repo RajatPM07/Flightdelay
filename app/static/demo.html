@@ -1,2 +1,1124 @@
-<!doctype html><html><head><meta charset="utf-8"><title>TripSecure+ Demo</title></head>
-<body>TripSecure+ Flight Delay — Live Pipeline Demo (placeholder)</body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TripSecure+ — Live Pipeline Demo</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind Play CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary:   '#B02A30',
+            secondary: '#F99D27',
+            tertiary:  '#005B75',
+            emerald:   '#10B981',
+            surface:   '#111625',
+            canvas:    '#0B0F19',
+          },
+          fontFamily: {
+            heading: ['Space Grotesk', 'sans-serif'],
+            body:    ['Inter', 'sans-serif'],
+          },
+        },
+      },
+    };
+  </script>
+
+  <!-- GSAP -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/MotionPathPlugin.min.js"></script>
+
+  <style>
+    /* ── Global ── */
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body {
+      margin: 0; padding: 0;
+      background: #0B0F19;
+      color: #E2E8F0;
+      font-family: 'Inter', sans-serif;
+      min-height: 100vh;
+    }
+    h1, h2, h3, h4, .heading {
+      font-family: 'Space Grotesk', sans-serif;
+    }
+
+    /* ── Phone frame ── */
+    .phone-shell {
+      width: 360px;
+      min-height: 700px;
+      background: #111625;
+      border-radius: 40px;
+      border: 2px solid rgba(255,255,255,0.08);
+      box-shadow:
+        0 0 0 6px #0B0F19,
+        0 0 0 8px rgba(255,255,255,0.06),
+        0 40px 80px rgba(0,0,0,0.7),
+        0 0 60px rgba(176,42,48,0.12);
+      position: relative;
+      padding: 56px 20px 32px;
+      display: flex;
+      flex-direction: column;
+    }
+    .phone-notch {
+      position: absolute;
+      top: 14px; left: 50%; transform: translateX(-50%);
+      width: 100px; height: 24px;
+      background: #0B0F19;
+      border-radius: 20px;
+    }
+    .phone-notch::after {
+      content: '';
+      position: absolute;
+      top: 50%; left: 50%; transform: translate(-50%, -50%);
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      background: #1a2030;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+
+    /* ── Stepper ── */
+    .stepper-node {
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 600; font-family: 'Space Grotesk', sans-serif;
+      border: 2px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.04);
+      transition: border-color 0.3s, background 0.3s, box-shadow 0.3s;
+      position: relative;
+      z-index: 1;
+      cursor: default;
+    }
+    .stepper-node.active-emerald {
+      border-color: #10B981;
+      background: rgba(16,185,129,0.15);
+      color: #10B981;
+    }
+    .stepper-node.active-orange {
+      border-color: #F99D27;
+      background: rgba(249,157,39,0.15);
+      color: #F99D27;
+    }
+    .stepper-node.active-crimson {
+      border-color: #B02A30;
+      background: rgba(176,42,48,0.15);
+      color: #B02A30;
+    }
+    .stepper-node.active-blue {
+      border-color: #005B75;
+      background: rgba(0,91,117,0.15);
+      color: #4FC3D8;
+    }
+
+    /* CSS pulse for active node — no GSAP loop */
+    @keyframes pulse-emerald {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0.6), 0 0 12px rgba(16,185,129,0.4); transform: scale(1); }
+      50%       { box-shadow: 0 0 0 8px rgba(16,185,129,0),  0 0 20px rgba(16,185,129,0.5); transform: scale(1.06); }
+    }
+    @keyframes pulse-orange {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(249,157,39,0.6), 0 0 12px rgba(249,157,39,0.4); transform: scale(1); }
+      50%       { box-shadow: 0 0 0 8px rgba(249,157,39,0),  0 0 20px rgba(249,157,39,0.5); transform: scale(1.06); }
+    }
+    @keyframes pulse-crimson {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(176,42,48,0.6), 0 0 12px rgba(176,42,48,0.4); transform: scale(1); }
+      50%       { box-shadow: 0 0 0 8px rgba(176,42,48,0),  0 0 20px rgba(176,42,48,0.5); transform: scale(1.06); }
+    }
+    @keyframes pulse-blue {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(0,91,117,0.6), 0 0 12px rgba(79,195,216,0.4); transform: scale(1); }
+      50%       { box-shadow: 0 0 0 8px rgba(0,91,117,0),  0 0 20px rgba(79,195,216,0.5); transform: scale(1.06); }
+    }
+    .pulse-emerald { animation: pulse-emerald 2.2s ease-in-out infinite; }
+    .pulse-orange  { animation: pulse-orange  2.2s ease-in-out infinite; }
+    .pulse-crimson { animation: pulse-crimson 2.2s ease-in-out infinite; }
+    .pulse-blue    { animation: pulse-blue    2.2s ease-in-out infinite; }
+
+    /* ── Stepper connector ── */
+    .stepper-line {
+      flex: 1; height: 2px;
+      background: rgba(255,255,255,0.1);
+      align-self: center;
+      position: relative;
+      z-index: 0;
+    }
+    .stepper-line.filled-emerald { background: linear-gradient(90deg, #10B981, #10B981); }
+    .stepper-line.filled-orange  { background: linear-gradient(90deg, #10B981, #F99D27); }
+    .stepper-line.filled-crimson { background: linear-gradient(90deg, #F99D27, #B02A30); }
+    .stepper-line.filled-blue    { background: linear-gradient(90deg, #10B981, #4FC3D8); }
+
+    /* ── Card ── */
+    .card {
+      background: #111625;
+      border: 1px solid rgba(255,255,255,0.07);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+    }
+
+    /* ── Timeline row ── */
+    .timeline-row {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .timeline-row:last-child { border-bottom: none; }
+
+    /* ── Notification card ── */
+    .notif-card {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+    }
+    .notif-card:last-child { margin-bottom: 0; }
+
+    /* ── Sim button ── */
+    .sim-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 14px;
+      border-radius: 8px;
+      font-size: 12px; font-weight: 600; font-family: 'Space Grotesk', sans-serif;
+      cursor: pointer;
+      border: 1px solid;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+    .sim-btn:hover  { opacity: 0.85; }
+    .sim-btn:active { transform: scale(0.96); }
+
+    /* ── Dashboard overlay ── */
+    #dashboard-overlay {
+      position: absolute; inset: 0;
+      background: rgba(11,15,25,0.72);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      z-index: 20;
+      transition: opacity 0.4s;
+    }
+
+    /* ── Motion path particle ── */
+    #particle {
+      width: 14px; height: 14px;
+      background: #B02A30;
+      border-radius: 50%;
+      box-shadow: 0 0 18px 4px rgba(176,42,48,0.8);
+      position: fixed;
+      pointer-events: none;
+      z-index: 100;
+      display: none;
+    }
+
+    /* ── Collapsible console ── */
+    #console-body {
+      max-height: 0; overflow: hidden;
+      transition: max-height 0.3s ease;
+    }
+    #console-body.open { max-height: 400px; }
+    pre { margin: 0; white-space: pre-wrap; word-break: break-all; }
+
+    /* ── Input styles ── */
+    .field-input {
+      width: 100%;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 10px;
+      padding: 10px 14px;
+      color: #E2E8F0;
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .field-input::placeholder { color: rgba(226,232,240,0.35); }
+    .field-input:focus {
+      border-color: rgba(176,42,48,0.6);
+      box-shadow: 0 0 0 3px rgba(176,42,48,0.12);
+    }
+    input[type="date"]::-webkit-calendar-picker-indicator {
+      filter: invert(0.6);
+      cursor: pointer;
+    }
+
+    /* ── CTA Button ── */
+    #cta-btn {
+      width: 100%;
+      padding: 14px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #B02A30 0%, #8a1f24 100%);
+      color: #fff;
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 700;
+      font-size: 15px;
+      letter-spacing: 0.3px;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(176,42,48,0.4);
+      transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+      display: flex; align-items: center; justify-content: center; gap: 10px;
+    }
+    #cta-btn:hover {
+      opacity: 0.92;
+      box-shadow: 0 6px 28px rgba(176,42,48,0.55);
+    }
+    #cta-btn:active { transform: scale(0.98); }
+    #cta-btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+
+    /* ── Spinner ── */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner {
+      width: 18px; height: 18px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    /* ── State badge ── */
+    .state-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px; font-weight: 600; font-family: 'Space Grotesk', sans-serif;
+    }
+    .state-dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+    }
+
+    /* Scrollbar ─ subtle */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 4px; }
+
+    /* ── Chip for terminal states ── */
+    .terminal-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px; font-weight: 700; font-family: 'Space Grotesk', sans-serif;
+      display: none;
+    }
+    .terminal-chip.visible { display: inline-flex; }
+  </style>
+</head>
+<body class="font-body bg-canvas min-h-screen">
+
+  <!-- Motion-path particle (GSAP-controlled) -->
+  <div id="particle"></div>
+
+  <!-- ── Top bar ── -->
+  <header class="w-full px-8 py-4 flex items-center justify-between border-b border-white/5">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 16.92V19a2 2 0 0 1-2.18 2A19.79 19.79 0 0 1 11.17 17 19.5 19.5 0 0 1 5 10.83 19.79 19.79 0 0 1 3 4.18 2 2 0 0 1 5 2h2.09a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91A16 16 0 0 0 14 15.91l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92Z"/>
+        </svg>
+      </div>
+      <div>
+        <span class="heading text-white font-bold text-lg leading-tight">TripSecure+</span>
+        <span class="text-white/30 text-xs ml-2 font-body">by ICICI Lombard</span>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <span class="w-2 h-2 rounded-full bg-emerald animate-pulse"></span>
+      <span class="text-xs text-white/40 font-body">Live Pipeline Demo</span>
+    </div>
+  </header>
+
+  <!-- ── Main split ── -->
+  <main class="flex flex-col lg:flex-row gap-8 p-6 lg:p-10 items-start justify-center max-w-7xl mx-auto w-full">
+
+    <!-- ── LEFT: Issue form inside phone frame ── -->
+    <div class="flex flex-col items-center gap-6 w-full lg:w-auto shrink-0">
+      <div class="text-center">
+        <h2 class="heading text-white text-2xl font-bold">Customer Portal</h2>
+        <p class="text-white/40 text-sm mt-1 font-body">Issue a flight-delay policy in seconds</p>
+      </div>
+
+      <div class="phone-shell" id="issue-form">
+        <div class="phone-notch"></div>
+
+        <!-- Phone header -->
+        <div class="flex items-center gap-2 mb-6">
+          <div class="w-7 h-7 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#B02A30" stroke-width="2.5">
+              <path d="M20 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2Z"/><path d="m22 7-10 7L2 7"/>
+            </svg>
+          </div>
+          <div>
+            <div class="heading text-white text-sm font-bold leading-tight">ICICI Lombard</div>
+            <div class="text-white/35 text-xs font-body">TripSecure+ Enrolment</div>
+          </div>
+        </div>
+
+        <!-- Form -->
+        <form id="policy-form" class="flex flex-col gap-4 flex-1" autocomplete="off">
+
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="text-white/50 text-xs font-medium font-body block mb-1.5">PNR</label>
+              <input id="f-pnr" type="text" placeholder="e.g. ABC123" maxlength="10"
+                     class="field-input uppercase" required />
+            </div>
+            <div>
+              <label class="text-white/50 text-xs font-medium font-body block mb-1.5">Flight No.</label>
+              <input id="f-flight" type="text" placeholder="e.g. AI302" maxlength="10"
+                     class="field-input uppercase" required />
+            </div>
+          </div>
+
+          <div>
+            <label class="text-white/50 text-xs font-medium font-body block mb-1.5">Travel Date</label>
+            <input id="f-date" type="date" class="field-input" required />
+          </div>
+
+          <div>
+            <label class="text-white/50 text-xs font-medium font-body block mb-1.5">Passenger Name</label>
+            <input id="f-name" type="text" placeholder="Full name" class="field-input" required />
+          </div>
+
+          <div>
+            <label class="text-white/50 text-xs font-medium font-body block mb-1.5">Phone (India)</label>
+            <input id="f-phone" type="tel" placeholder="+91 98765 43210" class="field-input" required />
+          </div>
+
+          <div>
+            <label class="text-white/50 text-xs font-medium font-body block mb-1.5">Email (optional)</label>
+            <input id="f-email" type="email" placeholder="you@example.com" class="field-input" />
+          </div>
+
+          <!-- DPDP Consent — unchecked by default, required -->
+          <div class="mt-1">
+            <label class="flex items-start gap-3 cursor-pointer group">
+              <div class="relative mt-0.5 shrink-0">
+                <input id="f-consent" type="checkbox" class="sr-only peer" />
+                <div class="w-5 h-5 rounded-md border-2 border-white/20 bg-white/5 peer-checked:border-primary peer-checked:bg-primary/20 group-hover:border-white/40 transition-colors flex items-center justify-center">
+                  <svg id="check-icon" class="w-3 h-3 text-primary opacity-0 peer-checked:opacity-100 transition-opacity" fill="none" viewBox="0 0 12 12" stroke="currentColor" stroke-width="2.5">
+                    <path d="M2 6l3 3 5-5"/>
+                  </svg>
+                </div>
+              </div>
+              <span class="text-white/50 text-xs leading-relaxed font-body">
+                I consent to processing of my personal data for flight-delay monitoring and notifications as per
+                <span class="text-secondary underline cursor-pointer">DPDP Act §6</span>.
+                Alerts via SMS/WhatsApp/Email.
+              </span>
+            </label>
+            <p id="consent-error" class="text-primary text-xs mt-1.5 hidden font-body">
+              Please provide consent to continue.
+            </p>
+          </div>
+
+          <!-- CTA -->
+          <div class="mt-2">
+            <button type="submit" id="cta-btn">
+              <span id="cta-label">Purchase TripSecure+</span>
+            </button>
+          </div>
+
+          <!-- Success state -->
+          <div id="form-success" class="hidden text-center py-2">
+            <div class="text-emerald font-semibold text-sm font-body flex items-center justify-center gap-2">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10B981" stroke-width="2.5">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+              </svg>
+              Policy Minted!
+            </div>
+            <div id="policy-id-display" class="text-white/30 text-xs mt-1 font-mono"></div>
+          </div>
+        </form>
+
+        <!-- Phone home indicator -->
+        <div class="flex justify-center mt-6">
+          <div class="w-24 h-1 rounded-full bg-white/10"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── RIGHT: Dashboard ── -->
+    <div class="flex-1 min-w-0 relative" id="dashboard-wrapper">
+
+      <!-- Blur overlay — removed after mint -->
+      <div id="dashboard-overlay">
+        <div class="text-center px-8">
+          <div class="w-16 h-16 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mx-auto mb-4">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1.5">
+              <path d="M22 12H2M22 12l-4-4M22 12l-4 4"/>
+              <circle cx="12" cy="12" r="10"/>
+            </svg>
+          </div>
+          <p class="heading text-white/40 text-base font-semibold">Awaiting Active Policy…</p>
+          <p class="text-white/25 text-sm mt-1 font-body">Issue a policy on the left to activate monitoring.</p>
+        </div>
+      </div>
+
+      <div id="dashboard" class="flex flex-col gap-6 filter blur-sm" style="filter: blur(6px);">
+
+        <!-- Flight summary header -->
+        <div class="card flex items-center justify-between gap-4" id="flight-summary">
+          <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-xl bg-tertiary/20 flex items-center justify-center shrink-0">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#4FC3D8" stroke-width="2" stroke-linecap="round">
+                <path d="M17.8 19.2L16 11l3.5-3.5C21 6 21 4 19.5 2.5S18 2 16.5 3.5L13 7 4.8 5.2a.5.5 0 0 0-.5.3l-.9 2.1c-.2.5 0 1 .4 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 4.2c.3.4.8.5 1.3.4l2.1-.9a.5.5 0 0 0 .3-.5Z"/>
+              </svg>
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <span id="dash-flight" class="heading text-white text-xl font-bold">—</span>
+                <span id="dash-date" class="text-white/40 text-sm font-body">—</span>
+              </div>
+              <div class="text-white/40 text-xs mt-0.5 font-body">
+                Scheduled: <span id="dash-scheduled" class="text-white/60">—</span>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div id="state-badge" class="state-badge bg-white/5 border border-white/10">
+              <div class="state-dot bg-white/30"></div>
+              <span id="state-text" class="text-white/50">—</span>
+            </div>
+            <div class="text-white/25 text-xs mt-1 text-right font-body">
+              Updated: <span id="dash-updated" class="text-white/40">—</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stepper -->
+        <div class="card" id="stepper-card">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="heading text-white font-semibold text-sm">Flight Status Pipeline</h3>
+            <div id="terminal-chip-container" class="flex gap-2">
+              <div id="chip-cancelled" class="terminal-chip bg-primary/15 border border-primary/30 text-primary">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                CANCELLED
+              </div>
+              <div id="chip-diverted" class="terminal-chip bg-secondary/15 border border-secondary/30 text-secondary">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
+                DIVERTED
+              </div>
+            </div>
+          </div>
+          <div id="stepper" class="flex items-center gap-1">
+            <!-- Injected by JS -->
+          </div>
+          <div class="flex justify-between mt-2 px-1">
+            <span class="text-white/30 text-xs font-body">Registered</span>
+            <span class="text-white/30 text-xs font-body">On-Time</span>
+            <span class="text-white/30 text-xs font-body">Delayed</span>
+            <span class="text-white/30 text-xs font-body">Departed</span>
+            <span class="text-white/30 text-xs font-body">Landed</span>
+          </div>
+        </div>
+
+        <!-- Sim controls -->
+        <div class="card" id="sim-controls">
+          <h3 class="heading text-white font-semibold text-sm mb-4">Simulation Controls</h3>
+          <div class="flex flex-wrap gap-2">
+            <button class="sim-btn bg-secondary/10 border-secondary/40 text-secondary"   data-event="delay_t1">Delay +45m</button>
+            <button class="sim-btn bg-secondary/15 border-secondary/60 text-secondary"   data-event="delay_t2">Delay +90m</button>
+            <button class="sim-btn bg-primary/15  border-primary/50  text-primary"       data-event="delay_t3">Delay +150m</button>
+            <button class="sim-btn bg-emerald/10  border-emerald/40  text-emerald"       data-event="recover">Recover</button>
+            <button class="sim-btn bg-tertiary/15 border-tertiary/40 text-[#4FC3D8]"     data-event="depart">Depart</button>
+            <button class="sim-btn bg-tertiary/20 border-tertiary/60 text-[#4FC3D8]"     data-event="land">Land</button>
+            <button class="sim-btn bg-primary/20  border-primary/60  text-primary"       data-event="cancel">Cancel</button>
+            <button class="sim-btn bg-secondary/15 border-secondary/40 text-secondary"   data-event="divert">Divert</button>
+          </div>
+          <p class="text-white/25 text-xs mt-3 font-body">Each button triggers a synthetic event via <code class="font-mono text-white/35">POST /demo/simulate</code></p>
+        </div>
+
+        <!-- Timeline -->
+        <div class="card" id="timeline-card">
+          <h3 class="heading text-white font-semibold text-sm mb-3">Event Timeline</h3>
+          <div id="timeline" class="divide-y divide-white/5">
+            <div class="text-white/25 text-sm py-4 text-center font-body">No events yet…</div>
+          </div>
+        </div>
+
+        <!-- Notifications -->
+        <div class="card" id="notifications-card">
+          <h3 class="heading text-white font-semibold text-sm mb-3">Notifications Sent</h3>
+          <div id="notifications">
+            <div class="text-white/25 text-sm py-2 text-center font-body">No notifications yet…</div>
+          </div>
+        </div>
+
+        <!-- Payload console (collapsible) -->
+        <div class="card" id="payload-console">
+          <button id="console-toggle"
+                  class="w-full flex items-center justify-between heading text-white/60 text-sm font-semibold hover:text-white/80 transition-colors">
+            <span class="flex items-center gap-2">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/>
+              </svg>
+              Simulate Response Console
+            </span>
+            <svg id="console-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="transition-transform">
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </button>
+          <div id="console-body">
+            <div class="mt-4 rounded-lg bg-black/40 border border-white/10 p-4 overflow-y-auto max-h-64">
+              <pre id="console-pre" class="text-xs text-emerald/80 font-mono leading-relaxed">// Simulate an event to see the response payload here</pre>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /#dashboard -->
+    </div><!-- /#dashboard-wrapper -->
+  </main>
+
+  <!-- Contact info strip -->
+  <div id="contact-strip" class="hidden fixed bottom-4 right-4 card py-3 px-5 flex items-center gap-3 z-30 shadow-2xl">
+    <div class="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center shrink-0">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#B02A30" stroke-width="2.5">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+      </svg>
+    </div>
+    <div>
+      <div class="text-white font-semibold text-sm font-body" id="strip-name">—</div>
+      <div class="text-white/50 text-xs font-mono" id="strip-phone">—</div>
+    </div>
+  </div>
+
+  <script>
+    /* ── Bootstrap ── */
+    gsap.registerPlugin(MotionPathPlugin);
+
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    /* ── State ── */
+    let policyId      = null;
+    let pollTimer     = null;
+    const seenTimeline = new Set();
+    const seenNotifs   = new Set();
+
+    /* ── DOM refs ── */
+    const form           = document.getElementById('policy-form');
+    const ctaBtn         = document.getElementById('cta-btn');
+    const ctaLabel       = document.getElementById('cta-label');
+    const formSuccess    = document.getElementById('form-success');
+    const policyDisplay  = document.getElementById('policy-id-display');
+    const consentInput   = document.getElementById('f-consent');
+    const checkIcon      = document.getElementById('check-icon');
+    const consentError   = document.getElementById('consent-error');
+    const dashboard      = document.getElementById('dashboard');
+    const overlay        = document.getElementById('dashboard-overlay');
+    const stepperEl      = document.getElementById('stepper');
+    const timelineEl     = document.getElementById('timeline');
+    const notifsEl       = document.getElementById('notifications');
+    const consolePre     = document.getElementById('console-pre');
+    const consoleBody    = document.getElementById('console-body');
+    const consoleChevron = document.getElementById('console-chevron');
+    const particle       = document.getElementById('particle');
+    const chipCancelled  = document.getElementById('chip-cancelled');
+    const chipDiverted   = document.getElementById('chip-diverted');
+
+    /* ── Consent checkbox visual sync ── */
+    consentInput.addEventListener('change', () => {
+      checkIcon.style.opacity = consentInput.checked ? '1' : '0';
+      if (consentInput.checked) consentError.classList.add('hidden');
+    });
+
+    /* ── Console toggle ── */
+    document.getElementById('console-toggle').addEventListener('click', () => {
+      consoleBody.classList.toggle('open');
+      const open = consoleBody.classList.contains('open');
+      consoleChevron.style.transform = open ? 'rotate(180deg)' : 'rotate(0deg)';
+    });
+
+    /* ── Stepper config ── */
+    const STEPPER_NODES = [
+      { id: 'REGISTERED', icon: '●', label: 'R' },
+      { id: 'ON_TIME',    icon: '✓', label: 'OT' },
+      { id: 'DELAYED',    icon: '!', label: 'D' },  // virtual — maps T1/T2/T3
+      { id: 'DEPARTED',   icon: '↑', label: '→' },
+      { id: 'LANDED',     icon: '✓', label: '↓' },
+    ];
+
+    /* Build stepper DOM once */
+    STEPPER_NODES.forEach((node, i) => {
+      const el = document.createElement('div');
+      el.id = `snode-${node.id}`;
+      el.className = 'stepper-node text-white/30';
+      el.innerHTML = node.icon;
+      el.setAttribute('data-node', node.id);
+      stepperEl.appendChild(el);
+
+      if (i < STEPPER_NODES.length - 1) {
+        const line = document.createElement('div');
+        line.id = `sline-${i}`;
+        line.className = 'stepper-line';
+        stepperEl.appendChild(line);
+      }
+    });
+
+    /* ── Map state → stepper highlight ── */
+    const STATE_NODE_MAP = {
+      REGISTERED: 'REGISTERED',
+      ON_TIME:    'ON_TIME',
+      DELAYED_T1: 'DELAYED',
+      DELAYED_T2: 'DELAYED',
+      DELAYED_T3: 'DELAYED',
+      DEPARTED:   'DEPARTED',
+      LANDED:     'LANDED',
+      CANCELLED:  null,
+      DIVERTED:   null,
+      CLOSED:     'LANDED',
+    };
+
+    const NODE_COLOR = {
+      REGISTERED: 'emerald',
+      ON_TIME:    'emerald',
+      DELAYED:    null,          // determined by tier
+      DEPARTED:   'blue',
+      LANDED:     'blue',
+    };
+
+    function stateToNodeColor(state) {
+      if (['REGISTERED','ON_TIME'].includes(state))           return 'emerald';
+      if (['DELAYED_T1','DELAYED_T2'].includes(state))        return 'orange';
+      if (state === 'DELAYED_T3')                             return 'crimson';
+      if (['DEPARTED','LANDED','CLOSED'].includes(state))     return 'blue';
+      return 'emerald';
+    }
+
+    let lastActiveNode = null;
+
+    function updateStepper(state) {
+      const targetNode = STATE_NODE_MAP[state] || null;
+      const color      = stateToNodeColor(state);
+
+      // Remove all active classes
+      STEPPER_NODES.forEach(n => {
+        const el = document.getElementById(`snode-${n.id}`);
+        el.className = 'stepper-node text-white/30';
+      });
+
+      // Show/hide terminal chips
+      chipCancelled.classList.toggle('visible', state === 'CANCELLED');
+      chipDiverted.classList.toggle('visible',  state === 'DIVERTED');
+
+      if (!targetNode) return;
+
+      const activeEl = document.getElementById(`snode-${targetNode}`);
+      activeEl.className = `stepper-node active-${color} pulse-${color}`;
+
+      // One-shot GSAP pop only when state changed
+      if (targetNode !== lastActiveNode && !reduce) {
+        gsap.fromTo(activeEl,
+          { scale: 1 },
+          { scale: 1.18, yoyo: true, repeat: 1, duration: 0.25, ease: 'back.out(2)' }
+        );
+      }
+      lastActiveNode = targetNode;
+
+      // Fill connector lines up to active node
+      const nodeOrder = STEPPER_NODES.map(n => n.id);
+      const activeIdx = nodeOrder.indexOf(targetNode);
+      for (let i = 0; i < STEPPER_NODES.length - 1; i++) {
+        const line = document.getElementById(`sline-${i}`);
+        line.className = i < activeIdx ? `stepper-line filled-${color}` : 'stepper-line';
+      }
+    }
+
+    /* ── State badge ── */
+    const BADGE_STYLES = {
+      REGISTERED: { bg: 'bg-white/5',      border: 'border-white/15',      dot: 'bg-white/40',      text: 'text-white/60' },
+      ON_TIME:    { bg: 'bg-emerald/10',   border: 'border-emerald/30',    dot: 'bg-emerald',       text: 'text-emerald' },
+      DELAYED_T1: { bg: 'bg-secondary/10', border: 'border-secondary/30',  dot: 'bg-secondary',     text: 'text-secondary' },
+      DELAYED_T2: { bg: 'bg-secondary/15', border: 'border-secondary/40',  dot: 'bg-secondary',     text: 'text-secondary' },
+      DELAYED_T3: { bg: 'bg-primary/15',   border: 'border-primary/40',    dot: 'bg-primary',       text: 'text-primary' },
+      DEPARTED:   { bg: 'bg-tertiary/15',  border: 'border-tertiary/40',   dot: 'bg-[#4FC3D8]',     text: 'text-[#4FC3D8]' },
+      LANDED:     { bg: 'bg-tertiary/20',  border: 'border-tertiary/50',   dot: 'bg-[#4FC3D8]',     text: 'text-[#4FC3D8]' },
+      CANCELLED:  { bg: 'bg-primary/20',   border: 'border-primary/50',    dot: 'bg-primary',       text: 'text-primary' },
+      DIVERTED:   { bg: 'bg-secondary/15', border: 'border-secondary/40',  dot: 'bg-secondary',     text: 'text-secondary' },
+      CLOSED:     { bg: 'bg-white/5',      border: 'border-white/15',      dot: 'bg-white/30',      text: 'text-white/50' },
+    };
+
+    function updateStateBadge(state) {
+      const badgeEl  = document.getElementById('state-badge');
+      const textEl   = document.getElementById('state-text');
+      const s        = BADGE_STYLES[state] || BADGE_STYLES['REGISTERED'];
+      const dotEl    = badgeEl.querySelector('.state-dot');
+
+      badgeEl.className  = `state-badge border ${s.bg} ${s.border}`;
+      dotEl.className    = `state-dot ${s.dot}`;
+      textEl.className   = s.text;
+      textEl.textContent = state.replace(/_/g, ' ');
+    }
+
+    /* ── Dashboard reveal animation ── */
+    function revealDashboard() {
+      if (reduce) {
+        // Snap — no animation
+        overlay.style.display  = 'none';
+        dashboard.style.filter = 'none';
+        document.getElementById('contact-strip').classList.remove('hidden');
+        animateNewCards();
+        return;
+      }
+
+      // Get approximate screen positions
+      const phoneRect = document.getElementById('issue-form').getBoundingClientRect();
+      const dashRect  = document.getElementById('dashboard').getBoundingClientRect();
+
+      const startX = phoneRect.right - 20;
+      const startY = phoneRect.top + phoneRect.height / 2;
+      const endX   = dashRect.left + 60;
+      const endY   = dashRect.top  + 60;
+
+      particle.style.left    = `${startX}px`;
+      particle.style.top     = `${startY}px`;
+      particle.style.display = 'block';
+
+      const tl = gsap.timeline({
+        onComplete: () => {
+          particle.style.display = 'none';
+          document.getElementById('contact-strip').classList.remove('hidden');
+          animateNewCards();
+        }
+      });
+
+      // Particle travels from phone to dashboard
+      tl.to(particle, {
+        x: endX - startX,
+        y: endY - startY,
+        duration: 0.7,
+        ease: 'power2.inOut',
+        motionPath: {
+          path: [
+            { x: 0, y: 0 },
+            { x: (endX - startX) * 0.5, y: -80 },
+            { x: endX - startX, y: endY - startY },
+          ],
+          curviness: 1.5,
+        },
+      });
+
+      // Fade out overlay + remove blur
+      tl.to(overlay, {
+        opacity: 0, duration: 0.5, ease: 'power2.out',
+        onComplete: () => { overlay.style.display = 'none'; }
+      }, '-=0.2');
+
+      tl.to(dashboard, {
+        filter: 'blur(0px)', duration: 0.4, ease: 'back.out(1.4)',
+        onStart: () => { dashboard.style.filter = 'blur(6px)'; }
+      }, '-=0.35');
+    }
+
+    /* ── Animate only newly-added cards (diff-based) ── */
+    function animateNewCards() {
+      if (reduce) return;
+      // Animate dashboard section cards that haven't been animated before
+      const cards = [
+        document.getElementById('flight-summary'),
+        document.getElementById('stepper-card'),
+        document.getElementById('sim-controls'),
+        document.getElementById('timeline-card'),
+        document.getElementById('notifications-card'),
+        document.getElementById('payload-console'),
+      ];
+      gsap.from(cards, {
+        opacity: 0,
+        y: 24,
+        duration: 0.5,
+        stagger: 0.08,
+        ease: 'back.out(1.4)',
+        clearProps: 'all',
+      });
+    }
+
+    /* ── Timeline render (diff-based) ── */
+    const STATE_COLORS = {
+      REGISTERED: '#94a3b8', ON_TIME: '#10B981',
+      DELAYED_T1: '#F99D27', DELAYED_T2: '#F99D27',
+      DELAYED_T3: '#B02A30', CANCELLED: '#B02A30',
+      DEPARTED: '#4FC3D8', LANDED: '#4FC3D8',
+      DIVERTED: '#F99D27', CLOSED: '#94a3b8',
+    };
+
+    function formatTs(iso) {
+      if (!iso) return '—';
+      try {
+        const d = new Date(iso);
+        return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      } catch { return iso; }
+    }
+
+    function renderTimeline(events) {
+      // Remove "no events" placeholder
+      const placeholder = timelineEl.querySelector('[data-placeholder]');
+      if (placeholder) placeholder.remove();
+      if (!events || events.length === 0) {
+        if (!timelineEl.querySelector('.timeline-row')) {
+          timelineEl.innerHTML = '<div data-placeholder class="text-white/25 text-sm py-4 text-center font-body">No events yet…</div>';
+        }
+        return;
+      }
+
+      // Events come newest-first from API
+      const newRows = [];
+      events.forEach((ev, idx) => {
+        const key = `${ev.ts}|${ev.new_state}`;
+        if (seenTimeline.has(key)) return;
+        seenTimeline.add(key);
+
+        const row = document.createElement('div');
+        row.className = 'timeline-row opacity-0';
+        row.dataset.key = key;
+
+        const color = STATE_COLORS[ev.new_state] || '#94a3b8';
+        const prevColor = STATE_COLORS[ev.prev_state] || '#94a3b8';
+
+        row.innerHTML = `
+          <div class="flex flex-col items-center gap-1 shrink-0 mt-1" style="min-width:28px">
+            <div class="w-2.5 h-2.5 rounded-full" style="background:${color}; box-shadow:0 0 6px ${color}88"></div>
+            <div class="w-px flex-1 min-h-[16px]" style="background:linear-gradient(${color}44, transparent)"></div>
+          </div>
+          <div class="flex-1 pb-2">
+            <div class="flex items-center gap-2 flex-wrap">
+              <span class="text-white/40 text-xs font-mono">${formatTs(ev.ts)}</span>
+              <span class="text-xs font-semibold font-body" style="color:${color}">${(ev.new_state||'—').replace(/_/g,' ')}</span>
+              ${ev.notified ? '<span class="text-xs">🔔</span>' : ''}
+            </div>
+            <div class="text-white/30 text-xs mt-0.5 font-body">
+              <span style="color:${prevColor}66">${(ev.prev_state||'—').replace(/_/g,' ')}</span>
+              <span class="mx-1 text-white/20">→</span>
+              <span style="color:${color}">${(ev.new_state||'—').replace(/_/g,' ')}</span>
+              ${ev.event_type ? `<span class="ml-2 text-white/20">· ${ev.event_type.replace(/_/g,' ')}</span>` : ''}
+            </div>
+          </div>
+        `;
+
+        // Insert at top (newest-first display)
+        timelineEl.insertBefore(row, timelineEl.firstChild);
+        newRows.push(row);
+      });
+
+      if (newRows.length > 0 && !reduce) {
+        gsap.to(newRows, {
+          opacity: 1, x: 0,
+          duration: 0.4,
+          stagger: 0.06,
+          ease: 'back.out(1.4)',
+          clearProps: 'all',
+        });
+      } else {
+        newRows.forEach(r => { r.style.opacity = '1'; });
+      }
+    }
+
+    /* ── Notifications render (diff-based) ── */
+    const CHANNEL_ICONS = {
+      sms:       `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
+      whatsapp:  `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>`,
+      email:     `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>`,
+    };
+
+    function renderNotifications(notifs, contact) {
+      const placeholder = notifsEl.querySelector('[data-placeholder]');
+      if (placeholder) placeholder.remove();
+      if (!notifs || notifs.length === 0) {
+        if (!notifsEl.querySelector('.notif-card')) {
+          notifsEl.innerHTML = '<div data-placeholder class="text-white/25 text-sm py-2 text-center font-body">No notifications yet…</div>';
+        }
+        return;
+      }
+
+      const newCards = [];
+      // notifs come sorted oldest-first; display newest first
+      [...notifs].reverse().forEach(n => {
+        const key = `${n.sent_ts}|${n.channel}|${(n.body||'').slice(0,40)}`;
+        if (seenNotifs.has(key)) return;
+        seenNotifs.add(key);
+
+        const card = document.createElement('div');
+        card.className = 'notif-card opacity-0';
+
+        const icon = CHANNEL_ICONS[n.channel?.toLowerCase()] || CHANNEL_ICONS['sms'];
+        const statusColor = n.status === 'sent' ? '#10B981' : '#F99D27';
+
+        card.innerHTML = `
+          <div class="flex items-start gap-3">
+            <div class="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center shrink-0 text-white/50 mt-0.5">
+              ${icon}
+            </div>
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="text-white/60 text-xs font-semibold font-body uppercase tracking-wider">${n.channel || '—'}</span>
+                <span class="text-xs px-2 py-0.5 rounded-full font-mono" style="background:${statusColor}18; color:${statusColor}; border:1px solid ${statusColor}33">${n.status || '—'}</span>
+                <span class="text-white/20 text-xs font-mono ml-auto shrink-0">${formatTs(n.sent_ts)}</span>
+              </div>
+              <p class="text-white/55 text-xs leading-relaxed font-body">${n.body || '—'}</p>
+              ${contact ? `<div class="text-white/20 text-xs mt-1 font-mono">${contact.name || ''} · ${contact.phone_masked || ''}</div>` : ''}
+            </div>
+          </div>
+        `;
+
+        notifsEl.insertBefore(card, notifsEl.firstChild);
+        newCards.push(card);
+      });
+
+      if (newCards.length > 0 && !reduce) {
+        gsap.to(newCards, {
+          opacity: 1,
+          duration: 0.4,
+          stagger: 0.07,
+          ease: 'back.out(1.4)',
+          clearProps: 'all',
+        });
+      } else {
+        newCards.forEach(c => { c.style.opacity = '1'; });
+      }
+    }
+
+    /* ── Refresh from API ── */
+    async function refresh() {
+      if (!policyId) return;
+      try {
+        const res = await fetch(`/policies/${policyId}`);
+        if (!res.ok) return;
+        const data = await res.json();
+
+        // Update flight summary
+        document.getElementById('dash-flight').textContent    = data.flight_number || '—';
+        document.getElementById('dash-date').textContent      = data.flight_date   || '—';
+        document.getElementById('dash-scheduled').textContent = data.scheduled_in_utc
+          ? new Date(data.scheduled_in_utc).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC' }) + ' UTC'
+          : '—';
+        document.getElementById('dash-updated').textContent   = formatTs(data.last_update_ts);
+
+        updateStateBadge(data.current_state || 'REGISTERED');
+        updateStepper(data.current_state || 'REGISTERED');
+        renderTimeline(data.timeline || []);
+        renderNotifications(data.notifications || [], data.contact);
+
+        // Contact strip
+        if (data.contact) {
+          document.getElementById('strip-name').textContent  = data.contact.name        || '—';
+          document.getElementById('strip-phone').textContent = data.contact.phone_masked || '—';
+        }
+      } catch (e) {
+        console.error('[refresh]', e);
+      }
+    }
+
+    /* ── Poll ── */
+    function startPolling() {
+      if (pollTimer) clearInterval(pollTimer);
+      pollTimer = setInterval(refresh, 2000);
+    }
+
+    /* ── Form submit ── */
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      if (!consentInput.checked) {
+        consentError.classList.remove('hidden');
+        return;
+      }
+      consentError.classList.add('hidden');
+
+      // Spinner
+      ctaBtn.disabled = true;
+      ctaLabel.innerHTML = '<div class="spinner"></div><span>Processing…</span>';
+
+      const body = {
+        pnr:           document.getElementById('f-pnr').value.trim().toUpperCase(),
+        flight_number: document.getElementById('f-flight').value.trim().toUpperCase(),
+        flight_date:   document.getElementById('f-date').value,
+        name:          document.getElementById('f-name').value.trim(),
+        phone:         document.getElementById('f-phone').value.trim(),
+        consent:       true,
+      };
+      const email = document.getElementById('f-email').value.trim();
+      if (email) body.email = email;
+
+      try {
+        const res  = await fetch('/policies', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify(body),
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.detail || `HTTP ${res.status}`);
+        }
+
+        policyId = data.policy_id;
+
+        // Show success
+        ctaBtn.style.display = 'none';
+        formSuccess.classList.remove('hidden');
+        policyDisplay.textContent = `Policy ID: ${policyId}`;
+
+        // Immediate refresh to populate dashboard
+        await refresh();
+
+        // Reveal animation
+        revealDashboard();
+
+        // Start polling
+        startPolling();
+
+      } catch (err) {
+        ctaBtn.disabled = false;
+        ctaLabel.textContent = 'Purchase TripSecure+';
+        alert(`Error: ${err.message}`);
+      }
+    });
+
+    /* ── Simulate buttons ── */
+    document.querySelectorAll('[data-event]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        if (!policyId) return;
+        btn.disabled = true;
+        const originalText = btn.textContent;
+        btn.textContent = '…';
+
+        try {
+          const res = await fetch('/demo/simulate', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ policy_id: policyId, event: btn.dataset.event }),
+          });
+          const data = await res.json();
+
+          // Pretty-print to console
+          consolePre.textContent = JSON.stringify(data, null, 2);
+          if (!consoleBody.classList.contains('open')) {
+            consoleBody.classList.add('open');
+            consoleChevron.style.transform = 'rotate(180deg)';
+          }
+
+          await refresh();
+        } catch (err) {
+          consolePre.textContent = `// Error: ${err.message}`;
+        } finally {
+          btn.disabled  = false;
+          btn.textContent = originalText;
+        }
+      });
+    });
+
+    /* ── Date input default: today ── */
+    (() => {
+      const today = new Date().toISOString().slice(0, 10);
+      document.getElementById('f-date').value = today;
+    })();
+
+  </script>
+</body>
+</html>
