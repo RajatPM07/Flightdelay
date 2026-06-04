@@ -42,6 +42,15 @@ def get_flight_provider() -> FlightDataProvider:
             _flight_provider = MockFlightDataProvider(
                 webhook_secret=settings.flightaware_webhook_secret
             )
+        elif settings.flight_provider == "aerodatabox":
+            from app.providers.flightdata.aerodatabox import AeroDataBoxProvider
+            _flight_provider = AeroDataBoxProvider(
+                api_key=settings.aerodatabox_api_key,
+                base_url=settings.aerodatabox_base_url,
+                rapidapi_host=settings.aerodatabox_rapidapi_host,
+                webhook_secret=settings.aerodatabox_webhook_secret,
+                public_webhook_base_url=settings.public_webhook_base_url,
+            )
         else:
             _flight_provider = FlightAwareProvider(
                 api_key=settings.flightaware_api_key,

@@ -19,6 +19,13 @@ class Settings(BaseSettings):
     flightaware_webhook_secret: str = ""
     public_webhook_base_url: str = ""
 
+    # Flight-data provider selection: "flightaware" | "aerodatabox" (mock via mock_providers)
+    flight_provider: str = "flightaware"
+    aerodatabox_api_key: str = ""
+    aerodatabox_base_url: str = "https://aerodatabox.p.rapidapi.com"
+    aerodatabox_rapidapi_host: str = "aerodatabox.p.rapidapi.com"
+    aerodatabox_webhook_secret: str = ""
+
     # Twilio
     twilio_account_sid: str = ""
     twilio_auth_token: str = ""
