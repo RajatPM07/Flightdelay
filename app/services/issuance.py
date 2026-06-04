@@ -16,6 +16,7 @@ from __future__ import annotations
 import uuid
 from dataclasses import asdict
 from datetime import datetime, timezone
+import re
 from typing import Any, Optional
 
 from sqlmodel import Session
@@ -57,6 +58,7 @@ async def issue_policy(
     if not consent:
         raise ValueError("Explicit consent is required to issue a policy (DPDP).")
 
+    phone = _normalise_india_phone(phone)
     policy_id = uuid.uuid4().hex
     now = datetime.now(timezone.utc)
 
@@ -139,6 +141,16 @@ def _state_from_baseline(baseline: FlightStatus, config: BrainConfig) -> FlightS
 
     delay = int((ref - baseline.scheduled_in_utc).total_seconds() / 60)
     return tier_for_delay(delay, config)
+
+
+def _normalise_india_phone(phone: str) -> str:
+    """Normalize India mobile input to E.164 for Twilio WhatsApp/SMS."""
+    digits = re.sub(r"\D", "", phone or "")
+    if len(digits) == 10:
+        digits = f"91{digits}"
+    if len(digits) != 12 or not digits.startswith("91"):
+        raise ValueError("A valid Indian phone number is required.")
+    return f"+{digits}"
 
 
 def _status_to_dict(status: FlightStatus) -> dict[str, Any]:

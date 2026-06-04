@@ -147,6 +147,35 @@ async def test_pii_isolation(db: Session):
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("raw_phone", "stored_phone"),
+    [
+        ("7358467199", "+917358467199"),
+        ("73584 67199", "+917358467199"),
+        ("91 73584 67199", "+917358467199"),
+        ("+91 73584 67199", "+917358467199"),
+    ],
+)
+async def test_issue_policy_normalizes_india_phone(db: Session, raw_phone: str, stored_phone: str):
+    provider = StubProvider(_make_status(est_delay_min=0))
+    policy_id, _ = await issue_policy(
+        **{**BASE_REQ, "phone": raw_phone}, db=db, provider=provider, config=CONFIG
+    )
+
+    pii = db.get(PolicyPII, policy_id)
+    assert pii.phone == stored_phone
+
+
+@pytest.mark.asyncio
+async def test_issue_policy_rejects_invalid_phone(db: Session):
+    provider = StubProvider(_make_status(est_delay_min=0))
+    with pytest.raises(ValueError, match="valid Indian phone"):
+        await issue_policy(
+            **{**BASE_REQ, "phone": "12345"}, db=db, provider=provider, config=CONFIG
+        )
+
+
+@pytest.mark.asyncio
 async def test_flight_state_row_written(db: Session):
     provider = StubProvider(_make_status(est_delay_min=0), alert_id="fa-alert-xyz")
     policy_id, _ = await issue_policy(**BASE_REQ, db=db, provider=provider, config=CONFIG)
