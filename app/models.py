@@ -4,7 +4,7 @@ Every other table references the anonymised policy_id token only.
 """
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from sqlmodel import Field, SQLModel, JSON, Column
@@ -68,3 +68,12 @@ class Notification(SQLModel, table=True):
     provider_msg_id: Optional[str] = None
     status: str = "pending"
     sent_ts: Optional[datetime] = None
+
+
+class FlightSubscription(SQLModel, table=True):
+    __tablename__ = "flight_subscriptions"
+    # Keyed by the normalised flight number — one shared subscription per number.
+    subject_key: str = Field(primary_key=True)
+    provider: str
+    subscription_id: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
