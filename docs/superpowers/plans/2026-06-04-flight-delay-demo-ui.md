@@ -524,7 +524,8 @@ def test_page_has_key_elements(monkeypatch):
     html = client.get("/").text
     for marker in ['id="issue-form"', 'id="dashboard"', 'id="stepper"',
                    'id="sim-controls"', 'id="timeline"', 'id="notifications"',
-                   'id="payload-console"', 'Space Grotesk', '#B02A30']:
+                   'id="payload-console"', 'Space Grotesk', '#B02A30',
+                   'gsap.min.js', 'prefers-reduced-motion']:
         assert marker in html, f"missing {marker}"
 ```
 
@@ -532,7 +533,7 @@ def test_page_has_key_elements(monkeypatch):
 
 - [ ] **Step 3: Build the page.** Replace `app/static/demo.html` with a complete page meeting the spec. It MUST include the element IDs from the test and satisfy the brand/behaviour requirements below. Concretely:
 
-  **Head:** Tailwind Play CDN (`https://cdn.tailwindcss.com`) + inline config setting `colors.primary=#B02A30`, `secondary=#F99D27`, `tertiary=#005B75`, `emerald` for on-time, fonts `Space Grotesk` (headings) + `Inter` (body) via Google Fonts `<link>`. Background `#0B0F19`, cards `#111625`.
+  **Head:** Tailwind Play CDN (`https://cdn.tailwindcss.com`) + inline config setting `colors.primary=#B02A30`, `secondary=#F99D27`, `tertiary=#005B75`, `emerald` for on-time, fonts `Space Grotesk` (headings) + `Inter` (body) via Google Fonts `<link>`. Background `#0B0F19`, cards `#111625`. Also load **GSAP** `https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js` and **MotionPathPlugin** `https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/MotionPathPlugin.min.js` (then `gsap.registerPlugin(MotionPathPlugin)`).
 
   **Layout:** two columns.
   - **Left** `id="issue-form"` inside a CSS **mobile phone frame** (rounded, notch, shadow) — the ICICI Lombard customer portal. Fields: PNR, Flight Number, Date, Passenger Name, Phone, DPDP consent checkbox (unchecked by default). Crimson CTA **"Purchase TripSecure+"**.
@@ -549,7 +550,13 @@ def test_page_has_key_elements(monkeypatch):
   4. Simulate click → `POST /demo/simulate` → put the returned `payload` into `id="payload-console"` (pretty-printed JSON) → `refresh()`.
   5. Subtle highlight animation when the state badge or timeline changes.
 
-  Keep it a single self-contained file; no external JS deps beyond the Tailwind CDN. Aim for genuinely polished visuals (spacing, shadows, motion) per the brand.
+  **Animation (GSAP, scoped to choreography):**
+  - **Mint → bridge → reveal** = one `gsap.timeline()`: button spinner→checkmark, then a glowing particle following a **MotionPath** from the phone frame to the dashboard, then overlay fade-out + un-blur with `ease: "back.out(1.4)"` (GSAP core has no real spring — `back.out`/`elastic.out` give the spring *feel*), then a `stagger` slide-in of the dashboard cards.
+  - **Card entrances are DIFF-BASED:** the 2s poll must NOT re-animate existing cards. Track rendered timeline/notification IDs (e.g. a `Set`); only `gsap.from(...)` the newly-appended nodes. Re-animating all cards every tick is a bug — avoid it.
+  - **Stepper pulse:** the persistent breathing (scale+shadow) on the active node is **CSS** (`@keyframes` + a toggled class) — no infinite GSAP tween to leak. Use GSAP only for a **one-shot pop** (`gsap.fromTo(node, {scale:1},{scale:1.12, yoyo:true, repeat:1, ease:"back.out"})`) when a node *becomes* active.
+  - **Reduced motion:** guard with `const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;` — when true, skip the bridge/stagger and snap straight to the revealed dashboard. The page must contain the literal string `prefers-reduced-motion`.
+
+  Keep it a single self-contained file; no external JS deps beyond the Tailwind + GSAP CDNs. Aim for genuinely polished visuals (spacing, shadows, motion) per the brand.
 
 - [ ] **Step 4: Run** — `.venv/bin/python -m pytest tests/test_demo_page.py -q` → all pass.
 
