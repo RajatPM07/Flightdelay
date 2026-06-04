@@ -17,10 +17,11 @@ logger = logging.getLogger(__name__)
 class MockFlightDataProvider(FlightDataProvider):
     """
     Mock flight status provider.
-    
+
     Returns generated, valid mock baselines and simulates subscription registration.
     """
     name = "mock"
+    subscription_scope = "per_policy"
 
     def __init__(self, webhook_secret: str = "") -> None:
         self.webhook_secret = webhook_secret

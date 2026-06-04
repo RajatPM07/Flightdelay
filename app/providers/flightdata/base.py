@@ -12,6 +12,17 @@ class FlightDataProvider(ABC):
 
     name: str = "base"
 
+    # "per_policy": one subscription per policy (FlightAware).
+    # "per_flight_number": one shared subscription per flight number (AeroDataBox).
+    subscription_scope: str = "per_policy"
+
+    def extract_subject(self, raw_payload: dict) -> tuple[str, str] | None:
+        """
+        Return (normalised_flight_number, flight_date_yyyy_mm_dd) used to route an
+        inbound webhook to active policies. Default None = route by alert_id instead.
+        """
+        return None
+
     @abstractmethod
     async def get_baseline(self, flight_number: str, flight_date: str) -> FlightStatus:
         """One-shot lookup at issuance to establish the starting snapshot."""

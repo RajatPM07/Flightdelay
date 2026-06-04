@@ -57,6 +57,7 @@ def _content_hash(
 
 class FlightAwareProvider(FlightDataProvider):
     name = "flightaware"
+    subscription_scope = "per_policy"
 
     def __init__(
         self,
