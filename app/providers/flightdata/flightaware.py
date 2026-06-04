@@ -25,6 +25,7 @@ import httpx
 
 from app.domain.brain import FlightStatus
 from app.providers.flightdata.base import FlightDataProvider
+from app.providers.flightdata.carriers import resolve_icao_ident
 
 logger = logging.getLogger(__name__)
 
@@ -93,13 +94,22 @@ class FlightAwareProvider(FlightDataProvider):
 
         flight_date must be YYYY-MM-DD (local origin date). We query a 24-hour UTC window
         centred on that date; the first returned flight is used as the baseline.
+
+        The customer-entered IATA ident is resolved to its ICAO form first — AeroAPI
+        returns zero flights for an IATA ident (e.g. 6E1341 -> IGO1341).
         """
-        url = f"{self.base_url}/flights/{flight_number}"
+        ident = resolve_icao_ident(flight_number)
+        url = f"{self.base_url}/flights/{ident}"
         params = {"start": f"{flight_date}T00:00:00Z", "end": f"{flight_date}T23:59:59Z"}
 
         logger.info(
             "aeroapi.get_baseline",
-            extra={"flight_number": flight_number, "flight_date": flight_date, "url": url},
+            extra={
+                "flight_number": flight_number,
+                "resolved_ident": ident,
+                "flight_date": flight_date,
+                "url": url,
+            },
         )
 
         async with httpx.AsyncClient(timeout=15.0) as client:
@@ -127,9 +137,10 @@ class FlightAwareProvider(FlightDataProvider):
         """
         url = f"{self.base_url}/alerts"
         webhook_url = f"{self.public_webhook_base_url}/webhooks/flightaware"
+        ident = resolve_icao_ident(flight_number)
 
         body: dict[str, Any] = {
-            "ident": flight_number,
+            "ident": ident,
             "start": f"{flight_date}T00:00:00Z",
             "end": f"{flight_date}T23:59:59Z",
             "events": {
