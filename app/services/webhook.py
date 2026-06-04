@@ -23,7 +23,7 @@ from sqlmodel import Session, select
 
 from app.domain.brain import FlightStatus, decide
 from app.domain.states import BrainConfig, EventType, FlightState, TERMINAL_STATES
-from app.models import EventLog, FlightStateRow
+from app.models import EventLog, FlightStateRow, Policy
 from app.providers.flightdata.base import FlightDataProvider
 from app.providers.messaging.base import MessageProvider
 from app.services.audit import append_event_log
@@ -71,6 +71,8 @@ async def process_webhook(
         return
 
     policy_id = state_row.policy_id
+    policy = db.get(Policy, policy_id)
+    flight_number_for_policy = policy.flight_number if policy else ""
     current_state = FlightState(state_row.current_state)
 
     # 4. Terminal-state shortcut — nothing left to decide; ack and exit.
@@ -144,9 +146,14 @@ async def process_webhook(
     log_id: int = log.id
     db.commit()
 
-    # 11. Deregister AeroAPI alert + cancel backstop on terminal transition.
-    if entering_terminal and alert_id:
-        await deregister_on_terminal(alert_id, provider)
+    # 11. Deregister alert + cancel backstop on terminal transition.
+    if entering_terminal:
+        if provider.subscription_scope == "per_policy":
+            if alert_id:
+                await deregister_on_terminal(alert_id, provider)
+        else:
+            from app.services.subscriptions import release_subscription
+            await release_subscription(db, provider, flight_number_for_policy, policy_id)
         cancel_backstop(policy_id)
 
     # 12. Notify via MessageProvider (idempotent: notifier checks EventLog.notification_id).

@@ -67,7 +67,8 @@ async def issue_policy(
     initial_state = _state_from_baseline(baseline, config)
 
     # --- 3. Alert registration -----------------------------------------------
-    alert_id = await provider.register_alert(policy_id, flight_number, flight_date)
+    from app.services.subscriptions import ensure_subscribed
+    alert_id = await ensure_subscribed(db, provider, flight_number, flight_date, policy_id)
 
     # --- 4. Persist (PII isolation is the invariant) -------------------------
     db.add(PolicyPII(policy_id=policy_id, name=name, phone=phone, email=email))
