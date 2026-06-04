@@ -1,0 +1,76 @@
+{
+  "greatCircleDistance": {
+    "meter": 2293743.04,
+    "km": 2293.74,
+    "mile": 1425.27,
+    "nm": 1238.52,
+    "feet": 7525403.68
+  },
+  "departure": {
+    "airport": {
+      "icao": "VABB",
+      "iata": "BOM",
+      "name": "Mumbai Chhatrapati Shivaji",
+      "shortName": "Chhatrapati Shivaji",
+      "municipalityName": "Mumbai",
+      "location": {
+        "lat": 19.0887,
+        "lon": 72.8679
+      },
+      "countryCode": "IN",
+      "timeZone": "Asia/Kolkata"
+    },
+    "scheduledTime": {
+      "utc": "2026-06-05 16:45Z",
+      "local": "2026-06-05 22:15+05:30"
+    },
+    "terminal": "2",
+    "quality": [
+      "Basic"
+    ]
+  },
+  "arrival": {
+    "airport": {
+      "icao": "OTHH",
+      "iata": "DOH",
+      "name": "Doha Hamad",
+      "shortName": "Hamad",
+      "municipalityName": "Doha",
+      "location": {
+        "lat": 25.273056,
+        "lon": 51.608055
+      },
+      "countryCode": "QA",
+      "timeZone": "Asia/Qatar"
+    },
+    "scheduledTime": {
+      "utc": "2026-06-05 20:10Z",
+      "local": "2026-06-05 23:10+03:00"
+    },
+    "revisedTime": {
+      "utc": "2026-06-05 20:10Z",
+      "local": "2026-06-05 23:10+03:00"
+    },
+    "predictedTime": {
+      "utc": "2026-06-05 20:30Z",
+      "local": "2026-06-05 23:30+03:00"
+    },
+    "quality": [
+      "Basic",
+      "Live"
+    ]
+  },
+  "lastUpdatedUtc": "2026-06-04 03:27Z",
+  "number": "6E 1341",
+  "status": "Expected",
+  "codeshareStatus": "IsOperator",
+  "isCargo": false,
+  "aircraft": {
+    "model": "Airbus A320 NEO"
+  },
+  "airline": {
+    "name": "IndiGo",
+    "iata": "6E",
+    "icao": "IGO"
+  }
+}
