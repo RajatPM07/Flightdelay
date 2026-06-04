@@ -22,9 +22,13 @@ from sqlmodel import Session
 
 from app.domain.brain import FlightStatus
 from app.domain.materiality import tier_for_delay
+from datetime import timedelta
+
+from app.config import settings
 from app.domain.states import BrainConfig, EventType, FlightState
 from app.models import EventLog, FlightStateRow, Policy, PolicyPII
 from app.providers.flightdata.base import FlightDataProvider
+from app.services.scheduler import schedule_backstop
 
 
 # ------------------------------------------------------------------
@@ -103,6 +107,13 @@ async def issue_policy(
     ))
 
     db.commit()
+
+    # Schedule the STA+24h backstop. Safe when scheduler is not running (e.g. tests).
+    schedule_backstop(
+        policy_id=policy_id,
+        fire_at=baseline.scheduled_in_utc + timedelta(hours=settings.backstop_hours),
+    )
+
     return policy_id, initial_state.value
 
 

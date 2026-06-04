@@ -28,6 +28,7 @@ from app.providers.flightdata.base import FlightDataProvider
 from app.providers.messaging.base import MessageProvider
 from app.services.audit import append_event_log
 from app.services.notifier import send_notification
+from app.services.scheduler import cancel_backstop, deregister_on_terminal
 
 logger = logging.getLogger(__name__)
 
@@ -132,12 +133,23 @@ async def process_webhook(
         state_row.last_known_status = _status_to_dict(incoming)
         db.add(state_row)
 
+    # Capture alert_id before commit (object expires after commit).
+    alert_id = state_row.alert_id
+    entering_terminal = (
+        decision.new_state in TERMINAL_STATES and current_state not in TERMINAL_STATES
+    )
+
     # Flush to assign log.id before commit; the notifier needs it for idempotency.
     db.flush()
     log_id: int = log.id
     db.commit()
 
-    # 11. Notify via MessageProvider (idempotent: notifier checks EventLog.notification_id).
+    # 11. Deregister AeroAPI alert + cancel backstop on terminal transition.
+    if entering_terminal and alert_id:
+        await deregister_on_terminal(alert_id, provider)
+        cancel_backstop(policy_id)
+
+    # 12. Notify via MessageProvider (idempotent: notifier checks EventLog.notification_id).
     if decision.should_notify and msg_provider is not None:
         await send_notification(
             policy_id=policy_id,
