@@ -233,6 +233,102 @@ async def test_webhook_deregisters_on_landed(db: Session):
     assert ALERT_ID in provider.deregistered
 
 
+# ------------------------------------------------------------------
+# Backstop — per_flight_number scope (AeroDataBox) does NOT tear down
+# shared subscription while a second policy is still active.
+# ------------------------------------------------------------------
+
+POLICY_ID_B = "pol-sched-002"
+SHARED_SUB_ID = "adb-sub-shared"
+FLIGHT_NUMBER = "AI101"
+
+
+class StubAeroDataBoxProvider(FlightDataProvider):
+    """Stub with subscription_scope = 'per_flight_number' (AeroDataBox-like)."""
+    name = "aerodatabox"
+    subscription_scope = "per_flight_number"
+
+    def __init__(self):
+        self.deregistered: list[str] = []
+
+    async def deregister_alert(self, alert_id: str) -> None:
+        self.deregistered.append(alert_id)
+
+    async def get_baseline(self, *a, **kw): ...
+    async def register_alert(self, *a, **kw): return SHARED_SUB_ID
+    def normalise(self, raw): ...
+    def verify_signature(self, *a, **kw): return True
+
+
+def _seed_two_policies(db: Session):
+    """Seed two active policies on the same flight number + a shared FlightSubscription."""
+    last = FlightStatus(
+        event_ts=STA - timedelta(hours=3),
+        scheduled_in_utc=STA,
+        estimated_in_utc=STA,
+        content_hash="baseline",
+    )
+    from app.providers.flightdata.carriers import normalize_flight_number
+    norm_key = normalize_flight_number(FLIGHT_NUMBER)
+
+    for pid in (POLICY_ID, POLICY_ID_B):
+        db.add(PolicyPII(policy_id=pid, name="Test", phone="+911234567890"))
+        db.add(Policy(
+            policy_id=pid, pnr="P1", flight_number=FLIGHT_NUMBER, flight_date="2026-07-01",
+            scheduled_in_utc=STA, scheduled_in_tz_offset="+00:00",
+            consent_ts=STA, status=FlightState.ON_TIME.value,
+        ))
+        db.add(FlightStateRow(
+            policy_id=pid,
+            current_state=FlightState.ON_TIME.value,
+            last_known_status=_status_to_dict(last),
+            last_update_ts=last.event_ts,
+            last_event_hash="baseline",
+            provider="aerodatabox",
+            alert_id=None,  # per_flight_number providers don't use per-row alert_id
+        ))
+
+    from app.models import FlightSubscription
+    db.add(FlightSubscription(
+        subject_key=norm_key,
+        provider="aerodatabox",
+        subscription_id=SHARED_SUB_ID,
+    ))
+    db.commit()
+
+
+@pytest.mark.asyncio
+async def test_backstop_per_flight_number_does_not_deregister_shared_subscription(db: Session):
+    """
+    AeroDataBox (per_flight_number) backstop for one policy must NOT tear down the
+    shared FlightSubscription while the second policy is still active.
+    """
+    _seed_two_policies(db)
+    provider = StubAeroDataBoxProvider()
+
+    # Run backstop for only POLICY_ID — POLICY_ID_B remains active.
+    await _run_backstop(POLICY_ID, db, provider)
+
+    # Policy A is now CLOSED.
+    row_a = db.get(FlightStateRow, POLICY_ID)
+    assert row_a.current_state == FlightState.CLOSED.value
+
+    # Policy B is still active (ON_TIME).
+    row_b = db.get(FlightStateRow, POLICY_ID_B)
+    assert row_b.current_state == FlightState.ON_TIME.value
+
+    # The shared AeroDataBox subscription was NOT deregistered.
+    assert len(provider.deregistered) == 0
+
+    # The FlightSubscription row still exists.
+    from app.models import FlightSubscription
+    from app.providers.flightdata.carriers import normalize_flight_number
+    norm_key = normalize_flight_number(FLIGHT_NUMBER)
+    sub = db.get(FlightSubscription, norm_key)
+    assert sub is not None
+    assert sub.subscription_id == SHARED_SUB_ID
+
+
 @pytest.mark.asyncio
 async def test_webhook_does_not_deregister_on_silent(db: Session):
     last = _make_incoming(20, estimated_in_utc=STA + timedelta(minutes=70))

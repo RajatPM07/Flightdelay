@@ -1,4 +1,4 @@
-"""Webhook receiver for FlightAware AeroAPI alerts."""
+"""Webhook receivers for FlightAware AeroAPI alerts and AeroDataBox push notifications."""
 from __future__ import annotations
 
 import logging

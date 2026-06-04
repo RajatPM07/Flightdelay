@@ -122,14 +122,27 @@ async def _run_backstop(
 
     # Deregister first — if this fails, we still force-close in the DB so no
     # more webhooks are processed; AeroAPI will eventually time-out the subscription.
-    if state_row.alert_id:
-        try:
-            await provider.deregister_alert(state_row.alert_id)
-        except Exception:
-            logger.exception(
-                "scheduler.backstop.deregister_failed",
-                extra={"policy_id": policy_id, "alert_id": state_row.alert_id},
-            )
+    if provider.subscription_scope == "per_policy":
+        if state_row.alert_id:
+            try:
+                await provider.deregister_alert(state_row.alert_id)
+            except Exception:
+                logger.exception(
+                    "scheduler.backstop.deregister_failed",
+                    extra={"policy_id": policy_id, "alert_id": state_row.alert_id},
+                )
+    else:
+        from app.services.subscriptions import release_subscription
+        pol = db.get(Policy, policy_id)
+        flight_number = pol.flight_number if pol else ""
+        if flight_number:
+            try:
+                await release_subscription(db, provider, flight_number, policy_id)
+            except Exception:
+                logger.exception(
+                    "scheduler.backstop.release_subscription_failed",
+                    extra={"policy_id": policy_id},
+                )
 
     state_row.current_state = FlightState.CLOSED.value
     db.add(state_row)

@@ -1,6 +1,7 @@
 # app/services/subscriptions.py
 from __future__ import annotations
 from sqlmodel import Session, select
+from sqlalchemy.exc import IntegrityError
 from app.models import FlightSubscription, FlightStateRow, Policy
 from app.domain.states import TERMINAL_STATES  # set of FlightState
 from app.providers.flightdata.base import FlightDataProvider
@@ -35,7 +36,14 @@ async def ensure_subscribed(db: Session, provider: FlightDataProvider, flight_nu
         return existing.subscription_id
     sub_id = await provider.register_alert(policy_id, flight_number, flight_date)
     db.add(FlightSubscription(subject_key=key, provider=provider.name, subscription_id=sub_id))
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        existing = db.get(FlightSubscription, key)
+        if existing:
+            return existing.subscription_id
+        raise
     return sub_id
 
 
