@@ -81,3 +81,63 @@ async def test_delay_t2_respects_narrow_tier_config(db):
     out = await simulate_event(policy_id="P1", event="delay_t2", db=db,
                                provider=StubProvider(), config=narrow, msg_provider=None)
     assert out["current_state"] == "DELAYED_T2"   # (60+80)//2 = 70, between T2 and T3
+
+
+# ---------------------------------------------------------------------------
+# HTTP endpoint tests
+# ---------------------------------------------------------------------------
+from fastapi.testclient import TestClient
+from sqlalchemy.pool import StaticPool
+from app.main import app
+from app.deps import get_db, get_flight_provider, get_msg_provider
+import app.config as cfg
+
+
+@pytest.fixture()
+def seeded_engine():
+    eng = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False}, poolclass=StaticPool)
+    SQLModel.metadata.create_all(eng)
+    with Session(eng) as s:
+        _seed(s)
+    yield eng
+
+
+def _override(engine_seeded):
+    def _get_db():
+        with Session(engine_seeded) as s:
+            yield s
+    app.dependency_overrides[get_db] = _get_db
+    app.dependency_overrides[get_flight_provider] = lambda: StubProvider()
+    app.dependency_overrides[get_msg_provider] = lambda: None
+
+
+def test_simulate_endpoint_demo_on(monkeypatch, seeded_engine):
+    monkeypatch.setattr(cfg.settings, "demo_mode", True)
+    _override(seeded_engine)
+    try:
+        r = TestClient(app).post("/demo/simulate", json={"policy_id": "P1", "event": "delay_t2"})
+        assert r.status_code == 200
+        assert r.json()["current_state"] == "DELAYED_T2"
+        assert "flight" in r.json()["payload"]
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_simulate_endpoint_404_when_demo_off(monkeypatch, seeded_engine):
+    monkeypatch.setattr(cfg.settings, "demo_mode", False)
+    _override(seeded_engine)
+    try:
+        r = TestClient(app).post("/demo/simulate", json={"policy_id": "P1", "event": "delay_t2"})
+        assert r.status_code == 404
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_simulate_endpoint_unknown_event_422(monkeypatch, seeded_engine):
+    monkeypatch.setattr(cfg.settings, "demo_mode", True)
+    _override(seeded_engine)
+    try:
+        r = TestClient(app).post("/demo/simulate", json={"policy_id": "P1", "event": "explode"})
+        assert r.status_code == 422
+    finally:
+        app.dependency_overrides.clear()
