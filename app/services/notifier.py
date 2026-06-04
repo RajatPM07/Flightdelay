@@ -109,15 +109,16 @@ def render_message(
 # Channel selection
 # ------------------------------------------------------------------
 
-def _pick_channel(pii: PolicyPII) -> tuple[Channel, str]:
+def _channel_chain(pii: PolicyPII) -> list[tuple[Channel, str]]:
     """
-    WhatsApp is preferred (higher open rate). Falls back to SMS if WhatsApp
-    fails at send time. Email is used when no phone is on file.
+    Ordered delivery attempts. WhatsApp is preferred (higher open rate); if it
+    fails at send time we fall back to SMS on the same number. Email is used only
+    when no phone is on file (sole channel, not a fallback).
     """
     if pii.phone:
-        return Channel.WHATSAPP, pii.phone
+        return [(Channel.WHATSAPP, pii.phone), (Channel.SMS, pii.phone)]
     if pii.email:
-        return Channel.EMAIL, pii.email
+        return [(Channel.EMAIL, pii.email)]
     raise ValueError(f"No contact method available for policy {pii.policy_id}")
 
 
@@ -165,9 +166,9 @@ async def send_notification(
         logger.warning("notifier.no_template", extra={"event_type": event_type.value})
         return None
 
-    # 5. Pick channel.
+    # 5. Build the channel fallback chain (WhatsApp -> SMS).
     try:
-        channel, to = _pick_channel(pii)
+        chain = _channel_chain(pii)
     except ValueError:
         logger.error("notifier.no_contact", extra={"policy_id": policy_id})
         return None
@@ -177,7 +178,7 @@ async def send_notification(
     notification = Notification(
         id=notification_id,
         policy_id=policy_id,
-        channel=channel.value,
+        channel=chain[0][0].value,
         template=template_name,
         body=body,
         status="pending",
@@ -185,18 +186,29 @@ async def send_notification(
     db.add(notification)
     db.flush()
 
-    # 7. Send.
-    try:
-        provider_msg_id = await msg_provider.send(channel, to, body, subject)
-        notification.status = "sent"
-        notification.provider_msg_id = provider_msg_id
-        notification.sent_ts = datetime.now(timezone.utc)
-        logger.info(
-            "notifier.sent",
-            extra={"policy_id": policy_id, "channel": channel.value, "event_type": event_type.value},
-        )
-    except Exception:
-        logger.exception("notifier.send_failed", extra={"policy_id": policy_id})
+    # 7. Send, falling back through the chain on per-channel failure.
+    provider_msg_id: Optional[str] = None
+    for channel, to in chain:
+        try:
+            provider_msg_id = await msg_provider.send(channel, to, body, subject)
+            notification.channel = channel.value
+            notification.status = "sent"
+            notification.provider_msg_id = provider_msg_id
+            notification.sent_ts = datetime.now(timezone.utc)
+            logger.info(
+                "notifier.sent",
+                extra={"policy_id": policy_id, "channel": channel.value, "event_type": event_type.value},
+            )
+            break
+        except Exception:
+            logger.warning(
+                "notifier.channel_failed",
+                extra={"policy_id": policy_id, "channel": channel.value},
+            )
+
+    if provider_msg_id is None:
+        logger.error("notifier.all_channels_failed", extra={"policy_id": policy_id})
+        notification.channel = chain[-1][0].value
         notification.status = "failed"
         db.add(notification)
         db.commit()

@@ -21,7 +21,7 @@ from sqlmodel import Session, SQLModel, create_engine, select
 from app.domain.states import EventType
 from app.models import EventLog, Notification, Policy, PolicyPII
 from app.providers.messaging.base import Channel, MessageProvider
-from app.services.notifier import _pick_channel, render_message, send_notification
+from app.services.notifier import _channel_chain, render_message, send_notification
 
 STA = datetime(2026, 7, 1, 14, 30, tzinfo=timezone.utc)
 POLICY_ID = "pol-notif-001"
@@ -67,13 +67,14 @@ def _seed_log(db: Session, event_type: EventType = EventType.DELAY_TIER_2) -> in
 
 
 class StubMessageProvider(MessageProvider):
-    def __init__(self, should_fail: bool = False):
+    def __init__(self, should_fail: bool = False, fail_channels: Optional[set[Channel]] = None):
         self.calls: list[dict] = []
         self.should_fail = should_fail
+        self.fail_channels = fail_channels or set()
 
     async def send(self, channel: Channel, to: str, body: str, subject: str | None = None) -> str:
-        if self.should_fail:
-            raise RuntimeError("send failed")
+        if self.should_fail or channel in self.fail_channels:
+            raise RuntimeError(f"send failed on {channel.value}")
         msg_id = f"stub-{len(self.calls)}"
         self.calls.append({"channel": channel, "to": to, "body": body, "subject": subject})
         return msg_id
@@ -125,27 +126,28 @@ def test_render_unknown_event_raises():
 
 
 # ------------------------------------------------------------------
-# _pick_channel tests
+# _channel_chain tests
 # ------------------------------------------------------------------
 
-def test_pick_channel_phone_gives_whatsapp():
+def test_channel_chain_phone_prefers_whatsapp_then_sms():
     pii = PolicyPII(policy_id="x", name="N", phone="+911234567890")
-    channel, to = _pick_channel(pii)
-    assert channel == Channel.WHATSAPP
-    assert to == "+911234567890"
+    chain = _channel_chain(pii)
+    assert chain == [
+        (Channel.WHATSAPP, "+911234567890"),
+        (Channel.SMS, "+911234567890"),
+    ]
 
 
-def test_pick_channel_no_phone_gives_email():
+def test_channel_chain_no_phone_gives_email_only():
     pii = PolicyPII(policy_id="x", name="N", phone="", email="a@b.com")
-    channel, to = _pick_channel(pii)
-    assert channel == Channel.EMAIL
-    assert to == "a@b.com"
+    chain = _channel_chain(pii)
+    assert chain == [(Channel.EMAIL, "a@b.com")]
 
 
-def test_pick_channel_no_contact_raises():
+def test_channel_chain_no_contact_raises():
     pii = PolicyPII(policy_id="x", name="N", phone="", email=None)
     with pytest.raises(ValueError):
-        _pick_channel(pii)
+        _channel_chain(pii)
 
 
 # ------------------------------------------------------------------
@@ -233,7 +235,30 @@ async def test_send_notification_email_channel(db: Session):
 
 
 @pytest.mark.asyncio
-async def test_send_notification_failed_send(db: Session):
+async def test_send_notification_falls_back_to_sms(db: Session):
+    """WhatsApp send fails -> notifier retries on SMS and records the SMS send."""
+    _seed(db)
+    log_id = _seed_log(db)
+    provider = StubMessageProvider(fail_channels={Channel.WHATSAPP})
+
+    notif_id = await send_notification(
+        policy_id=POLICY_ID, event_type=EventType.DELAY_TIER_2,
+        message_context={"delay_min": 70}, event_log_id=log_id,
+        db=db, msg_provider=provider,
+    )
+
+    assert notif_id is not None
+    notif = db.get(Notification, notif_id)
+    assert notif.status == "sent"
+    assert notif.channel == Channel.SMS.value
+    # WhatsApp raised (not recorded); the successful SMS attempt is the only call.
+    assert [c["channel"] for c in provider.calls] == [Channel.SMS]
+    # The EventLog is linked only after the successful fallback send.
+    assert db.get(EventLog, log_id).notification_id == notif_id
+
+
+@pytest.mark.asyncio
+async def test_send_notification_all_channels_fail(db: Session):
     _seed(db)
     log_id = _seed_log(db)
     provider = StubMessageProvider(should_fail=True)
@@ -248,6 +273,8 @@ async def test_send_notification_failed_send(db: Session):
     notifs = db.exec(select(Notification).where(Notification.policy_id == POLICY_ID)).all()
     assert len(notifs) == 1
     assert notifs[0].status == "failed"
+    # On total failure the row reflects the last channel tried (SMS).
+    assert notifs[0].channel == Channel.SMS.value
 
 
 @pytest.mark.asyncio
