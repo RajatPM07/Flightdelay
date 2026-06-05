@@ -171,3 +171,38 @@ def test_verify_signature_no_secret():
     )
     # Open mode: no secret configured → always passes (dev only).
     assert open_provider.verify_signature(b"anything", "garbage") is True
+
+
+# --- _select_flight: pick the occurrence by ORIGIN-LOCAL departure date ---
+
+def _resp_two_legs():
+    # Same number, two adjacent days. Origin Asia/Dubai (+04): a 22:30Z departure is
+    # 02:30 LOCAL the next day, so its origin-local date is one day ahead of the UTC date.
+    return {"flights": [
+        {  # UTC 2026-06-04 22:30Z  ->  local 2026-06-05 02:30 (+04)
+            "scheduled_out": "2026-06-04T22:30:00Z",
+            "scheduled_in": "2026-06-04T23:55:00Z",
+            "origin": {"timezone": "Asia/Dubai"},
+        },
+        {  # UTC 2026-06-05 22:30Z  ->  local 2026-06-06 02:30 (+04)
+            "scheduled_out": "2026-06-05T22:30:00Z",
+            "scheduled_in": "2026-06-05T23:55:00Z",
+            "origin": {"timezone": "Asia/Dubai"},
+        },
+    ]}
+
+
+def test_select_flight_matches_origin_local_date():
+    # Customer asks for 2026-06-05 (their local ticket date) -> the 22:30Z-on-4-Jun leg.
+    f = PROVIDER._select_flight(_resp_two_legs(), "2026-06-05")
+    assert f["scheduled_out"] == "2026-06-04T22:30:00Z"
+
+
+def test_select_flight_falls_back_to_first_when_no_local_match():
+    f = PROVIDER._select_flight(_resp_two_legs(), "2030-01-01")
+    assert f["scheduled_out"] == "2026-06-04T22:30:00Z"  # first, preserves prior behaviour
+
+
+def test_select_flight_raises_when_empty():
+    with pytest.raises(ValueError):
+        PROVIDER._select_flight({"flights": []}, "2026-06-05")

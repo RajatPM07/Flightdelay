@@ -108,7 +108,7 @@
     // default date = today
     fDate.value = new Date().toISOString().slice(0, 10);
 
-    function fmt(dt) { if (!dt) return '—'; try { return new Date(dt).toLocaleString('en-IN', { dateStyle:'medium', timeStyle:'short', timeZone:'UTC' }) + ' UTC'; } catch { return dt; } }
+    function fmt(dt) { if (!dt) return '—'; try { return new Date(dt).toLocaleString('en-IN', { dateStyle:'medium', timeStyle:'short', timeZone:'Asia/Kolkata' }) + ' IST'; } catch { return dt; } }
     function badge(state) { const c = STATE_COLORS[state] || '#64748B'; return `<span class="badge" style="background:${c}1a;color:${c};border:1px solid ${c}55">${(state||'—').replace(/_/g,' ')}</span>`; }
     function flagsLine(s) { const delay = s.delay_minutes == null ? '—' : (s.delay_minutes + ' min'); return `delay ${delay}${s.departed?' · departed':''}${s.cancelled?' · cancelled':''}${s.diverted?' · diverted':''}`; }
 

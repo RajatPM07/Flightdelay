@@ -18,8 +18,10 @@ import hashlib
 import hmac
 import json
 import logging
-from datetime import datetime, timezone
+from datetime import date as _date
+from datetime import datetime, timedelta, timezone
 from typing import Any, Optional
+from zoneinfo import ZoneInfo
 
 import httpx
 
@@ -39,6 +41,23 @@ def _parse_dt(value: Optional[str]) -> Optional[datetime]:
         return None
     # AeroAPI uses 'Z' suffix; fromisoformat only handles it in 3.11+.
     return datetime.fromisoformat(value.replace("Z", "+00:00"))
+
+
+def _origin_local_date(flight: dict) -> Optional[str]:
+    """The flight's scheduled departure date in the ORIGIN airport's local timezone.
+
+    AeroAPI gives departure times in UTC plus origin.timezone (IANA). Converting the
+    scheduled departure into that zone yields the date the customer sees on the ticket.
+    Returns None when the time or timezone is missing/invalid.
+    """
+    out = _parse_dt(flight.get("scheduled_out") or flight.get("estimated_out"))
+    tz_name = (flight.get("origin") or {}).get("timezone")
+    if out is None or not tz_name:
+        return None
+    try:
+        return out.astimezone(ZoneInfo(tz_name)).date().isoformat()
+    except Exception:
+        return None
 
 
 def _content_hash(
@@ -78,11 +97,20 @@ class FlightAwareProvider(FlightDataProvider):
     def _headers(self) -> dict[str, str]:
         return {"x-apikey": self.api_key}
 
-    def _flight_from_response(self, data: dict) -> dict:
-        """Extract the first matching flight dict from a /flights response."""
+    def _select_flight(self, data: dict, flight_date: str) -> dict:
+        """Pick the flight whose ORIGIN-LOCAL departure date matches flight_date.
+
+        The widened query can return adjacent days; choosing by the origin-local date
+        (not the UTC date) is what makes a flight departing near local midnight resolve to
+        the customer's ticket date. Falls back to the first flight if none matches (e.g.
+        missing origin timezone), preserving prior behaviour rather than 404-ing.
+        """
         flights = data.get("flights", [])
         if not flights:
             raise ValueError("AeroAPI returned no flights for the requested ident/date window.")
+        for f in flights:
+            if _origin_local_date(f) == flight_date:
+                return f
         return flights[0]
 
     # ------------------------------------------------------------------
@@ -93,15 +121,23 @@ class FlightAwareProvider(FlightDataProvider):
         """
         One-shot lookup at issuance.
 
-        flight_date must be YYYY-MM-DD (local origin date). We query a 24-hour UTC window
-        centred on that date; the first returned flight is used as the baseline.
+        flight_date must be YYYY-MM-DD, interpreted as the ORIGIN-LOCAL departure date
+        (what the customer reads off their ticket). AeroAPI filters by a UTC window, so a
+        bare 24h-UTC window drifts for flights that depart near local midnight — it can
+        return the next local day's flight. We widen the window to +/-1 day and then pick
+        the flight whose origin-local departure date matches flight_date. This aligns
+        FlightAware with AeroDataBox (which already keys on the local date).
 
         The customer-entered IATA ident is resolved to its ICAO form first — AeroAPI
         returns zero flights for an IATA ident (e.g. 6E1341 -> IGO1341).
         """
         ident = resolve_icao_ident(flight_number)
         url = f"{self.base_url}/flights/{ident}"
-        params = {"start": f"{flight_date}T00:00:00Z", "end": f"{flight_date}T23:59:59Z"}
+        d = _date.fromisoformat(flight_date)
+        params = {
+            "start": f"{d - timedelta(days=1)}T00:00:00Z",
+            "end": f"{d + timedelta(days=1)}T23:59:59Z",
+        }
 
         logger.info(
             "aeroapi.get_baseline",
@@ -118,7 +154,7 @@ class FlightAwareProvider(FlightDataProvider):
             resp.raise_for_status()
             data = resp.json()
 
-        flight = self._flight_from_response(data)
+        flight = self._select_flight(data, flight_date)
         status = self.normalise(flight)
         logger.info(
             "aeroapi.get_baseline.ok",

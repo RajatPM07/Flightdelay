@@ -704,37 +704,32 @@ Set in `.env`: `FLIGHT_PROVIDER=aerodatabox`, `AERODATABOX_WEBHOOK_SECRET=<long-
 
 # Follow-up: vendor occurrence-disambiguation for the live lookup (page 2)
 
-**Logged:** 2026-06-05 · **Status:** open (not blocking the demo)
+**Logged:** 2026-06-05 · **Status:** mostly fixed (one Phase-2 item remains)
 
-## Context
-The `/live/reconcile` endpoint queries both vendors for a flight number + date and
-reconciles them. We discovered (flight **G9081**, 2026-06-05) that the two vendors can
-return **different flight occurrences** for the same query:
-- **FlightAware** filters by a **UTC** day window (`/flights/{ident}?start&end`) → returned
-  the 5-Jun-UTC departure (not yet departed).
-- **AeroDataBox** interprets the path `{date}` in the flight's **local** timezone
-  (`/flights/number/{n}/{date}`) → returned the 4-Jun-UTC departure (already landed).
+## Corrected understanding (the date drift was on OUR FlightAware side)
+For **G9081** on 2026-06-05 the two vendors returned occurrences ~24h apart. Raw data:
+`dep SHJ 2026-06-04 22:30Z = 2026-06-05 02:30 local (+04, Asia/Dubai)`. So the flight's
+**local** departure date is **5 Jun** even though its UTC date is 4 Jun.
+- **AeroDataBox** keys the path `{date}` on the **local** scheduled date → correctly
+  returned the 5-Jun-local flight. (Right for the customer — the ticket shows the local date.)
+- **FlightAware** was queried with a bare **UTC** day window
+  (`start=DATET00:00Z&end=DATET23:59Z`) → grabbed the *next* physical flight (5-Jun-**UTC**
+  departure = 6-Jun local). **This UTC-window query was the drift**, not AeroDataBox.
 
-Merging two different occurrences produced a nonsense verdict (LANDED for a flight that
-hadn't left). **Shipped guard:** if the feeds' scheduled arrivals differ by > 6h, set
-`occurrence_mismatch=true`, return no merged verdict, and explain (commit 772a243).
+## Shipped fixes
+- [x] **Mismatch guard** (commit 772a243): if feeds' scheduled arrivals differ by > 6h,
+      set `occurrence_mismatch=true`, return no merged verdict, explain.
+- [x] **FlightAware date drift fixed**: `get_baseline` now widens the query to ±1 day and
+      `_select_flight` picks the leg whose **origin-local** departure date (via
+      `origin.timezone`) matches the requested date; falls back to first if none match.
+      → G9081 now resolves the SAME occurrence on both feeds (both LANDED, agree). Tests
+      in `tests/test_flightaware_normalise.py`.
+- [x] **Page shows IST** (`Asia/Kolkata`) instead of UTC.
 
-## The open question
-When vendors disagree on date interpretation, **which occurrence did the customer mean?**
-The guard currently refuses to merge, but does not pick the "right" leg.
-
-## Proposed work (Phase-2 normalization)
-- [ ] Carry **scheduled departure** (and ideally origin tz) on `FlightStatus` so occurrence
-      identity can be matched on departure, not just arrival. (Touches the brain dataclass —
-      review carefully; keep `tests/test_brain.py` green.)
-- [ ] Pass AeroDataBox `dateLocalRole` explicitly (e.g. `Departure`) and align both vendors
-      to the same date semantics (prefer the customer's local departure date).
-- [ ] In reconcile, when occurrences differ, **select the leg matching the requested date**
-      (by local departure date) instead of only flagging the mismatch; fall back to the
-      flag when neither clearly matches.
-- [ ] Tests: overnight flight where vendors split across the UTC midnight; assert the
-      correct single occurrence is chosen and reconciled.
-
-## Why deferred
-Reliable disambiguation needs departure-time + timezone awareness and a change to the core
-`FlightStatus`. The shipped mismatch-guard is the safe, honest behavior until then.
+## Remaining Phase-2 item (not blocking)
+- [ ] Carry **scheduled departure + origin tz** on `FlightStatus` so occurrence identity can
+      be matched on departure inside `reconcile` itself (today the cross-feed guard still
+      keys on scheduled **arrival**). Also consider passing AeroDataBox `dateLocalRole`
+      explicitly. Touches the core brain dataclass — review carefully; keep
+      `tests/test_brain.py` green. With the FlightAware fix in place this is now an edge
+      hardening, not a correctness gap for the common case.
