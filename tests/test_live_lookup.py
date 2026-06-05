@@ -53,8 +53,8 @@ def test_happy_path_maps_ident_delay_and_state(monkeypatch):
     assert d["vendor"] == "flightaware"
     assert d["requested_ident"] == "6E1341"
     assert d["resolved_ident"] == resolve_icao_ident("6E1341") != "6E1341"  # IATA -> ICAO surfaced
-    assert d["delay_minutes"] == 90
-    assert d["state"] == "DELAYED_T2"
+    assert d["status"]["delay_minutes"] == 90
+    assert d["status"]["state"] == "DELAYED_T2"
     assert d["status"]["departed"] is False
 
 
@@ -88,4 +88,53 @@ def test_unknown_vendor_is_400(monkeypatch):
 def test_lookup_404_when_demo_off(monkeypatch):
     monkeypatch.setattr(cfg.settings, "demo_mode", False)
     r = client.get("/live/lookup", params={"flight": "6E1341", "date": "2026-06-10", "vendor": "flightaware"})
+    assert r.status_code == 404
+
+
+def _inject_per_vendor(monkeypatch, mapping):
+    """mapping: vendor -> _FakeProvider."""
+    monkeypatch.setattr(cfg.settings, "demo_mode", True)
+    monkeypatch.setattr(live, "get_lookup_provider", lambda vendor: mapping[vendor])
+
+
+def test_reconcile_airborne_feed_wins(monkeypatch):
+    # FlightAware lags (not departed, +10m); AeroDataBox reports airborne (departed).
+    fa = FlightStatus(event_ts=_SCHED, scheduled_in_utc=_SCHED,
+                      estimated_in_utc=_SCHED + timedelta(minutes=10))
+    adb = FlightStatus(event_ts=_SCHED, scheduled_in_utc=_SCHED,
+                       estimated_in_utc=_SCHED, departed=True)
+    _inject_per_vendor(monkeypatch, {
+        "flightaware": _FakeProvider(result=fa),
+        "aerodatabox": _FakeProvider(result=adb),
+    })
+    r = client.get("/live/reconcile", params={"flight": "6E1341", "date": "2026-06-05"})
+    assert r.status_code == 200
+    d = r.json()
+    assert d["agreement"] is False
+    assert d["reconciled"]["state"] == "DEPARTED"
+    assert {f["vendor"] for f in d["feeds"]} == {"flightaware", "aerodatabox"}
+    assert all(f["ok"] for f in d["feeds"])
+    assert "disagree" in d["explanation"].lower()
+
+
+def test_reconcile_one_feed_down_uses_the_other(monkeypatch):
+    adb = FlightStatus(event_ts=_SCHED, scheduled_in_utc=_SCHED, departed=True)
+    _inject_per_vendor(monkeypatch, {
+        "flightaware": _FakeProvider(exc=ValueError("no flights")),
+        "aerodatabox": _FakeProvider(result=adb),
+    })
+    r = client.get("/live/reconcile", params={"flight": "6E1341", "date": "2026-06-05"})
+    assert r.status_code == 200
+    d = r.json()
+    assert d["reconciled"]["state"] == "DEPARTED"
+    fa_feed = next(f for f in d["feeds"] if f["vendor"] == "flightaware")
+    assert fa_feed["ok"] is False
+
+
+def test_reconcile_404_when_all_feeds_fail(monkeypatch):
+    _inject_per_vendor(monkeypatch, {
+        "flightaware": _FakeProvider(exc=ValueError("no flights")),
+        "aerodatabox": _FakeProvider(exc=ValueError("no flights")),
+    })
+    r = client.get("/live/reconcile", params={"flight": "ZZ9999", "date": "2026-06-05"})
     assert r.status_code == 404

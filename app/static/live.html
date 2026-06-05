@@ -38,7 +38,7 @@
     <!-- Lookup -->
     <section class="card p-5">
       <h2 class="font-bold text-base mb-1">Real-time flight status lookup</h2>
-      <p class="text-muted text-sm mb-4">Enter a flight number — the same vendor-agnostic engine queries either provider and returns one normalised status.</p>
+      <p class="text-muted text-sm mb-4">Enter a flight number — the engine queries both vendors and <b>reconciles</b> them into one verdict (vendors often disagree on freshness; the in-house brain resolves it). Use “One feed” to inspect a single provider.</p>
       <form id="live-form" class="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
         <div class="sm:col-span-1">
           <label class="text-xs text-muted block mb-1">Flight number</label>
@@ -49,14 +49,15 @@
           <input id="live-date" type="date" class="inp" required />
         </div>
         <div class="sm:col-span-1">
-          <label class="text-xs text-muted block mb-1">Vendor</label>
+          <label class="text-xs text-muted block mb-1">Single feed (optional)</label>
           <select id="live-vendor" class="inp">
             <option value="flightaware">FlightAware</option>
             <option value="aerodatabox">AeroDataBox</option>
           </select>
         </div>
-        <div class="sm:col-span-1">
-          <button type="submit" class="btn w-full">Get status</button>
+        <div class="sm:col-span-1 flex gap-2">
+          <button type="submit" class="btn w-full" title="Query both vendors and reconcile">Reconcile both</button>
+          <button type="button" id="live-single" class="try" title="Query only the selected feed">One feed</button>
         </div>
       </form>
 
@@ -108,18 +109,54 @@
     fDate.value = new Date().toISOString().slice(0, 10);
 
     function fmt(dt) { if (!dt) return '—'; try { return new Date(dt).toLocaleString('en-IN', { dateStyle:'medium', timeStyle:'short', timeZone:'UTC' }) + ' UTC'; } catch { return dt; } }
+    function badge(state) { const c = STATE_COLORS[state] || '#64748B'; return `<span class="badge" style="background:${c}1a;color:${c};border:1px solid ${c}55">${(state||'—').replace(/_/g,' ')}</span>`; }
+    function flagsLine(s) { const delay = s.delay_minutes == null ? '—' : (s.delay_minutes + ' min'); return `delay ${delay}${s.departed?' · departed':''}${s.cancelled?' · cancelled':''}${s.diverted?' · diverted':''}`; }
 
     function renderError(msg) {
       resultEl.innerHTML = `<div class="border border-line rounded-lg p-4 bg-[#FCEBEC] text-primary text-sm">${msg}</div>`;
     }
 
-    function renderResult(d) {
-      const color = STATE_COLORS[d.state] || '#64748B';
-      const delay = d.delay_minutes == null ? '—' : (d.delay_minutes + ' min');
+    // A compact per-vendor row (used inside the reconciled view and standalone).
+    function feedRow(f) {
+      if (!f.ok) return `<div class="text-sm py-1"><b>${f.vendor}</b>: <span class="text-secondary">${f.error}</span></div>`;
+      const s = f.status;
+      return `<div class="text-sm py-1 flex items-center gap-2 flex-wrap">
+        <b class="w-28 inline-block">${f.vendor}</b> ${badge(s.state)}
+        <span class="text-muted">${f.requested_ident||''}${f.resolved_ident?(' → '+f.resolved_ident):''} · ${flagsLine(s)} · est ${fmt(s.estimated_in_utc)}</span>
+      </div>`;
+    }
+
+    // Reconciled view: headline verdict + both source feeds + explanation.
+    function renderReconcile(d) {
+      const s = d.reconciled;
+      const agreeColor = d.agreement ? '#15803D' : '#E8740C';
       resultEl.innerHTML = `
         <div class="border border-line rounded-lg p-4">
           <div class="flex items-center justify-between flex-wrap gap-2">
-            <span class="badge" style="background:${color}1a;color:${color};border:1px solid ${color}55">${(d.state||'—').replace(/_/g,' ')}</span>
+            <div class="flex items-center gap-2">
+              <span class="text-xs text-muted">Reconciled verdict</span> ${badge(s.state)}
+            </div>
+            <span class="text-xs" style="color:${agreeColor}">${d.agreement ? 'feeds agree' : 'feeds differ'}</span>
+          </div>
+          <div class="text-sm mt-2 text-muted">${d.requested_ident} on ${d.flight_date} · ${flagsLine(s)} · est ${fmt(s.estimated_in_utc)}</div>
+
+          <div class="mt-3 pt-3 border-t border-line">
+            <div class="text-xs text-muted mb-1">Source feeds</div>
+            ${d.feeds.map(feedRow).join('')}
+          </div>
+
+          <p class="text-xs mt-3 p-2 rounded" style="background:${agreeColor}12;color:#1F2937">${d.explanation}</p>
+          <p class="text-muted text-xs mt-2">${d.notes}</p>
+          <p class="text-muted text-xs">Read-only — no monitoring or messages are triggered here.</p>
+        </div>`;
+    }
+
+    // Single-feed view (used by "One feed" + some edge-case demos).
+    function renderSingle(d) {
+      resultEl.innerHTML = `
+        <div class="border border-line rounded-lg p-4">
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            ${badge(d.status.state)}
             <span class="text-xs text-muted">Source: <b>${d.vendor}</b></span>
           </div>
           <div class="text-sm mt-3">
@@ -127,40 +164,48 @@
             <div class="mt-1"><span class="text-muted">Scheduled:</span> ${fmt(d.status.scheduled_in_utc)}</div>
             <div><span class="text-muted">Estimated:</span> ${fmt(d.status.estimated_in_utc)}</div>
             <div><span class="text-muted">Actual:</span> ${fmt(d.status.actual_in_utc)}</div>
-            <div class="mt-1"><span class="text-muted">Delay:</span> ${delay}
-              · ${d.status.departed?'departed ':''}${d.status.cancelled?'cancelled ':''}${d.status.diverted?'diverted ':''}</div>
+            <div class="mt-1">${flagsLine(d.status)}</div>
           </div>
           <p class="text-muted text-xs mt-3">${d.notes}</p>
-          <p class="text-muted text-xs mt-1">Read-only status lookup — no monitoring or messages are triggered here.</p>
         </div>`;
     }
 
-    async function lookup() {
-      const flight = fFlight.value.trim().toUpperCase();
-      const date = fDate.value;
-      const vendor = fVendor.value;
+    async function reconcileBoth() {
+      const flight = fFlight.value.trim().toUpperCase(); const date = fDate.value;
+      if (!flight || !date) return;
+      resultEl.innerHTML = '<div class="text-muted text-sm p-2">Querying both feeds…</div>';
+      try {
+        const res = await fetch(`/live/reconcile?flight=${encodeURIComponent(flight)}&date=${encodeURIComponent(date)}`);
+        const data = await res.json();
+        if (!res.ok) { renderError(data.detail || `Error ${res.status}`); return; }
+        renderReconcile(data);
+      } catch (e) { renderError('Network error: ' + e.message); }
+    }
+
+    async function singleLookup(vendor) {
+      const flight = fFlight.value.trim().toUpperCase(); const date = fDate.value;
       if (!flight || !date) return;
       resultEl.innerHTML = '<div class="text-muted text-sm p-2">Looking up…</div>';
       try {
         const res = await fetch(`/live/lookup?flight=${encodeURIComponent(flight)}&date=${encodeURIComponent(date)}&vendor=${vendor}`);
         const data = await res.json();
         if (!res.ok) { renderError(data.detail || `Error ${res.status}`); return; }
-        renderResult(data);
+        renderSingle(data);
       } catch (e) { renderError('Network error: ' + e.message); }
     }
 
-    form.addEventListener('submit', (e) => { e.preventDefault(); lookup(); });
+    form.addEventListener('submit', (e) => { e.preventDefault(); reconcileBoth(); });
+    document.getElementById('live-single').addEventListener('click', () => singleLookup(fVendor.value));
 
     // Edge-case "try it" buttons set inputs then run a real lookup.
     document.querySelectorAll('[data-try]').forEach(btn => {
       btn.addEventListener('click', () => {
         const today = new Date();
         const kind = btn.dataset.try;
-        if (kind === 'iata')    { fFlight.value = '6E1341'; fVendor.value = 'flightaware'; fDate.value = today.toISOString().slice(0,10); }
-        if (kind === 'notfound'){ fFlight.value = 'ZZ9999'; fVendor.value = 'flightaware'; fDate.value = today.toISOString().slice(0,10); }
-        if (kind === 'future')  { const d = new Date(today.getTime() + 30*864e5); fFlight.value = '6E1341'; fVendor.value = 'flightaware'; fDate.value = d.toISOString().slice(0,10); }
-        if (kind === 'gate')    { fFlight.value = '6E1341'; fVendor.value = 'aerodatabox'; fDate.value = today.toISOString().slice(0,10); }
-        lookup();
+        if (kind === 'iata')    { fFlight.value = '6E1341'; fDate.value = today.toISOString().slice(0,10); singleLookup('flightaware'); return; }
+        if (kind === 'notfound'){ fFlight.value = 'ZZ9999'; fDate.value = today.toISOString().slice(0,10); singleLookup('flightaware'); return; }
+        if (kind === 'future')  { const d = new Date(today.getTime() + 30*864e5); fFlight.value = '6E1341'; fDate.value = d.toISOString().slice(0,10); singleLookup('flightaware'); return; }
+        if (kind === 'gate')    { fFlight.value = '6E1341'; fDate.value = today.toISOString().slice(0,10); reconcileBoth(); return; }
       });
     });
   </script>
