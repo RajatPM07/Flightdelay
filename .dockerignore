@@ -1,0 +1,17 @@
+# Keep the image small and free of local-only / sensitive files.
+.git
+.gitignore
+.venv
+.pytest_cache
+__pycache__
+*.pyc
+tests
+scripts
+docs
+tasks
+*.md
+.env
+.env.*
+local_dev.sqlite3
+*.sqlite3
+.DS_Store

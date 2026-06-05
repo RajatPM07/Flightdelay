@@ -1,0 +1,27 @@
+# Render Blueprint — one-click shareable demo deploy.
+# In the Render dashboard: New > Blueprint > connect this repo. Render reads this file.
+# Free plan: public HTTPS URL, spins down after ~15 min idle (first hit cold-starts ~50s).
+services:
+  - type: web
+    name: tripsecure-flightdelay-demo
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      # Demo mode: serves the demo UI at / and the /demo/simulate route.
+      - key: DEMO_MODE
+        value: "True"
+      # Mock the flight-data vendor (no FlightAware/AeroDataBox keys needed).
+      - key: MOCK_PROVIDERS
+        value: "True"
+      # Mock messaging too (no Twilio/SendGrid; notifications are recorded, not delivered).
+      # Set to "False" + add TWILIO_* vars to send via the WhatsApp sandbox instead.
+      - key: MOCK_MESSAGING
+        value: "True"
+      - key: APP_ENV
+        value: "demo"
+      - key: LOG_LEVEL
+        value: "INFO"
+      # DATABASE_URL intentionally unset -> app falls back to on-container SQLite.
