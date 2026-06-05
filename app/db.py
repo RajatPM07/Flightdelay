@@ -5,7 +5,11 @@ from sqlmodel import Session, SQLModel, create_engine
 
 from app.config import settings
 
-engine = create_engine(settings.database_url or "sqlite:///./local_dev.sqlite3", echo=False)
+engine = create_engine(
+    settings.database_url or "sqlite:///./local_dev.sqlite3",
+    echo=False,
+    pool_pre_ping=True,
+)
 
 
 def init_db() -> None:

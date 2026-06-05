@@ -203,6 +203,7 @@ async def send_notification(
         except Exception:
             logger.warning(
                 "notifier.channel_failed",
+                exc_info=True,
                 extra={"policy_id": policy_id, "channel": channel.value},
             )
 
