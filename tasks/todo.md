@@ -695,7 +695,7 @@ Set in `.env`: `FLIGHT_PROVIDER=aerodatabox`, `AERODATABOX_WEBHOOK_SECRET=<long-
 - [x] **Task 2: Verify Config and Run Tests**
   - Ensure that the syntax in `render.yaml` is correct.
   - Run the test suite to ensure that no tests are broken by this configuration change.
-- [/] **Task 3: Commit and Push Changes**
+- [x] **Task 3: Commit and Push Changes**
   - Commit the updated `render.yaml` and `tasks/todo.md`.
   - Push the branch `claude/flightdelay-mvp-scaffold-EvfpU` to GitHub so Render detects the change and triggers a redeploy.
 
