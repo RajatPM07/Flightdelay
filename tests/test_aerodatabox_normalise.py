@@ -52,6 +52,26 @@ def test_diverted_status_sets_flags():
     assert s.departed is True
 
 
+def test_enroute_without_actual_departure_is_not_departed():
+    # AeroDataBox's free-tier `status` can read "EnRoute" while the flight has NOT left
+    # (no actual/runway departure time, scheduled departure still in the future).
+    # Trust the concrete timestamp, not the label — symmetric with FlightAware's actual_off.
+    import copy
+    f = copy.deepcopy(FIXTURE)
+    f["status"] = "EnRoute"
+    f["departure"].pop("actualTime", None)
+    f["departure"].pop("runwayTime", None)
+    assert _p().normalise(f).departed is False
+
+
+def test_departed_when_actual_departure_time_present():
+    import copy
+    f = copy.deepcopy(FIXTURE)
+    f["status"] = "EnRoute"
+    f["departure"]["runwayTime"] = {"utc": "2026-06-05 17:10Z", "local": "2026-06-05 22:40+05:30"}
+    assert _p().normalise(f).departed is True
+
+
 def test_missing_scheduled_arrival_raises():
     import copy
     f = copy.deepcopy(FIXTURE); f["arrival"].pop("scheduledTime", None)

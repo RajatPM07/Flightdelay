@@ -230,7 +230,18 @@ class AeroDataBoxProvider(FlightDataProvider):
         cancelled = status == "Canceled"
         diverted = status == "Diverted"
         arrived = status == "Arrived"
-        departed = status in {"Departed", "EnRoute", "Approaching", "Arrived", "Diverted"}
+
+        # Departed is derived from a CONCRETE actual departure timestamp, never the
+        # `status` string alone: AeroDataBox's free-tier `status` can read "EnRoute"
+        # for a flight that has not left yet (no runway/actual time, departure still in
+        # the future). This mirrors FlightAware, which keys `departed` off actual_off.
+        dep = flight.get("departure") or {}
+        dep_actual = _parse_adb_dt((dep.get("actualTime") or {}).get("utc")) or _parse_adb_dt(
+            (dep.get("runwayTime") or {}).get("utc")
+        )
+        # Arrived/Diverted are terminal-ish: the flight provably departed even if the
+        # departure timestamp is absent from the payload.
+        departed = dep_actual is not None or status in {"Arrived", "Diverted"}
 
         # actual_in is only set once the flight has arrived (gate chocks-on).
         actual_in = revised if arrived else None
