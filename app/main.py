@@ -4,7 +4,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
-from app.api import demo, policies, webhooks
+from app.api import demo, live, policies, webhooks
 from app.config import settings
 from app.db import init_db
 from app.services.scheduler import scheduler
@@ -27,6 +27,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="TripSecure+ Flight Delay MVP", version="0.1.0", lifespan=lifespan)
 app.include_router(demo.router)
+app.include_router(live.router)
 app.include_router(policies.router)
 app.include_router(webhooks.router)
 

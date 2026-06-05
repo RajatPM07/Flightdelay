@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TripSecure+ — Live Flight Status (Multi-vendor)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { theme: { extend: { colors: {
+      primary: '#B02A30', secondary: '#E8740C', tertiary: '#0E6B86',
+      success: '#15803D', ink: '#1F2937', muted: '#64748B', canvas: '#F4F5F7', line: '#E5E7EB',
+    } } } };
+  </script>
+  <style>
+    body { background:#F4F5F7; color:#1F2937; }
+    .card { background:#fff; border:1px solid #E5E7EB; border-radius:12px; }
+    .inp { width:100%; border:1px solid #D7DCE2; border-radius:8px; padding:9px 12px; font-size:14px; outline:none; }
+    .inp:focus { border-color:#B02A30; box-shadow:0 0 0 3px rgba(176,42,48,.12); }
+    .btn { background:#B02A30; color:#fff; border:none; border-radius:8px; padding:10px 16px; font-weight:600; cursor:pointer; }
+    .btn:hover { background:#8A1F24; } .btn:disabled { opacity:.6; cursor:not-allowed; }
+    .badge { display:inline-flex; align-items:center; gap:6px; padding:4px 12px; border-radius:999px; font-size:12px; font-weight:600; }
+    .try { font-size:12px; border:1px solid #E5E7EB; background:#fff; border-radius:8px; padding:6px 10px; cursor:pointer; }
+    .try:hover { background:#F8FAFC; }
+  </style>
+</head>
+<body class="min-h-screen">
+  <!-- NOTE: intentionally minimal — both demo pages get a visual redesign later. -->
+  <header class="bg-white border-b border-line px-6 py-4 flex items-center justify-between">
+    <div>
+      <div class="font-bold text-lg">ICICI Lombard <span class="text-muted text-sm font-normal">General Insurance</span></div>
+      <div class="text-primary text-xs font-semibold">TripSecure+ · Live Flight Status (multi-vendor)</div>
+    </div>
+    <a href="/" class="text-sm text-tertiary underline">See the alert pipeline demo →</a>
+  </header>
+
+  <main class="max-w-3xl mx-auto px-6 py-8 flex flex-col gap-6">
+
+    <!-- Lookup -->
+    <section class="card p-5">
+      <h2 class="font-bold text-base mb-1">Real-time flight status lookup</h2>
+      <p class="text-muted text-sm mb-4">Enter a flight number — the same vendor-agnostic engine queries either provider and returns one normalised status.</p>
+      <form id="live-form" class="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
+        <div class="sm:col-span-1">
+          <label class="text-xs text-muted block mb-1">Flight number</label>
+          <input id="live-flight" class="inp uppercase" placeholder="6E1341" required />
+        </div>
+        <div class="sm:col-span-1">
+          <label class="text-xs text-muted block mb-1">Date</label>
+          <input id="live-date" type="date" class="inp" required />
+        </div>
+        <div class="sm:col-span-1">
+          <label class="text-xs text-muted block mb-1">Vendor</label>
+          <select id="live-vendor" class="inp">
+            <option value="flightaware">FlightAware</option>
+            <option value="aerodatabox">AeroDataBox</option>
+          </select>
+        </div>
+        <div class="sm:col-span-1">
+          <button type="submit" class="btn w-full">Get status</button>
+        </div>
+      </form>
+
+      <div id="live-result" class="mt-5"></div>
+    </section>
+
+    <!-- Edge cases handled -->
+    <section class="card p-5" id="live-edgecases">
+      <h2 class="font-bold text-base mb-1">Edge cases handled by the engine</h2>
+      <p class="text-muted text-sm mb-4">These are covered in code. Click “try it” to see the real behaviour.</p>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div class="border border-line rounded-lg p-3">
+          <div class="font-semibold text-sm">IATA → ICAO / spacing</div>
+          <p class="text-muted text-xs mt-1 mb-2">Ticket ident (<code>6E1341</code>) maps to FlightAware ICAO (<code>IGO1341</code>); AeroDataBox’s spaced form is normalised.</p>
+          <button class="try" data-try="iata">try it</button>
+        </div>
+        <div class="border border-line rounded-lg p-3">
+          <div class="font-semibold text-sm">Flight not found</div>
+          <p class="text-muted text-xs mt-1 mb-2">A bogus ident returns a clean message, not a crash or empty screen.</p>
+          <button class="try" data-try="notfound">try it</button>
+        </div>
+        <div class="border border-line rounded-lg p-3">
+          <div class="font-semibold text-sm">Future-date / rate-limit</div>
+          <p class="text-muted text-xs mt-1 mb-2">FlightAware ~2-day future limit (400) and AeroDataBox ~1 req/s (429) surface readable messages.</p>
+          <button class="try" data-try="future">try it</button>
+        </div>
+        <div class="border border-line rounded-lg p-3">
+          <div class="font-semibold text-sm">Gate vs runway / reconciliation</div>
+          <p class="text-muted text-xs mt-1 mb-2">Delay is computed from the best <b>gate-arrival</b> estimate (not runway touchdown); both feeds reconcile to one status.</p>
+          <button class="try" data-try="gate">try it</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const STATE_COLORS = {
+      REGISTERED:'#64748B', ON_TIME:'#15803D', DELAYED_T1:'#E8740C', DELAYED_T2:'#E8740C',
+      DELAYED_T3:'#B02A30', DEPARTED:'#0E6B86', LANDED:'#0E6B86', CANCELLED:'#B02A30',
+      DIVERTED:'#E8740C', CLOSED:'#64748B',
+    };
+    const form = document.getElementById('live-form');
+    const resultEl = document.getElementById('live-result');
+    const fFlight = document.getElementById('live-flight');
+    const fDate = document.getElementById('live-date');
+    const fVendor = document.getElementById('live-vendor');
+
+    // default date = today
+    fDate.value = new Date().toISOString().slice(0, 10);
+
+    function fmt(dt) { if (!dt) return '—'; try { return new Date(dt).toLocaleString('en-IN', { dateStyle:'medium', timeStyle:'short', timeZone:'UTC' }) + ' UTC'; } catch { return dt; } }
+
+    function renderError(msg) {
+      resultEl.innerHTML = `<div class="border border-line rounded-lg p-4 bg-[#FCEBEC] text-primary text-sm">${msg}</div>`;
+    }
+
+    function renderResult(d) {
+      const color = STATE_COLORS[d.state] || '#64748B';
+      const delay = d.delay_minutes == null ? '—' : (d.delay_minutes + ' min');
+      resultEl.innerHTML = `
+        <div class="border border-line rounded-lg p-4">
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <span class="badge" style="background:${color}1a;color:${color};border:1px solid ${color}55">${(d.state||'—').replace(/_/g,' ')}</span>
+            <span class="text-xs text-muted">Source: <b>${d.vendor}</b></span>
+          </div>
+          <div class="text-sm mt-3">
+            <div><span class="text-muted">Ident:</span> ${d.requested_ident} <span class="text-muted">→</span> <b>${d.resolved_ident}</b></div>
+            <div class="mt-1"><span class="text-muted">Scheduled:</span> ${fmt(d.status.scheduled_in_utc)}</div>
+            <div><span class="text-muted">Estimated:</span> ${fmt(d.status.estimated_in_utc)}</div>
+            <div><span class="text-muted">Actual:</span> ${fmt(d.status.actual_in_utc)}</div>
+            <div class="mt-1"><span class="text-muted">Delay:</span> ${delay}
+              · ${d.status.departed?'departed ':''}${d.status.cancelled?'cancelled ':''}${d.status.diverted?'diverted ':''}</div>
+          </div>
+          <p class="text-muted text-xs mt-3">${d.notes}</p>
+          <p class="text-muted text-xs mt-1">Read-only status lookup — no monitoring or messages are triggered here.</p>
+        </div>`;
+    }
+
+    async function lookup() {
+      const flight = fFlight.value.trim().toUpperCase();
+      const date = fDate.value;
+      const vendor = fVendor.value;
+      if (!flight || !date) return;
+      resultEl.innerHTML = '<div class="text-muted text-sm p-2">Looking up…</div>';
+      try {
+        const res = await fetch(`/live/lookup?flight=${encodeURIComponent(flight)}&date=${encodeURIComponent(date)}&vendor=${vendor}`);
+        const data = await res.json();
+        if (!res.ok) { renderError(data.detail || `Error ${res.status}`); return; }
+        renderResult(data);
+      } catch (e) { renderError('Network error: ' + e.message); }
+    }
+
+    form.addEventListener('submit', (e) => { e.preventDefault(); lookup(); });
+
+    // Edge-case "try it" buttons set inputs then run a real lookup.
+    document.querySelectorAll('[data-try]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const today = new Date();
+        const kind = btn.dataset.try;
+        if (kind === 'iata')    { fFlight.value = '6E1341'; fVendor.value = 'flightaware'; fDate.value = today.toISOString().slice(0,10); }
+        if (kind === 'notfound'){ fFlight.value = 'ZZ9999'; fVendor.value = 'flightaware'; fDate.value = today.toISOString().slice(0,10); }
+        if (kind === 'future')  { const d = new Date(today.getTime() + 30*864e5); fFlight.value = '6E1341'; fVendor.value = 'flightaware'; fDate.value = d.toISOString().slice(0,10); }
+        if (kind === 'gate')    { fFlight.value = '6E1341'; fVendor.value = 'aerodatabox'; fDate.value = today.toISOString().slice(0,10); }
+        lookup();
+      });
+    });
+  </script>
+</body>
+</html>

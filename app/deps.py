@@ -30,6 +30,33 @@ def get_brain_config() -> BrainConfig:
     )
 
 
+def get_lookup_provider(vendor: str) -> FlightDataProvider:
+    """Build a REAL flight-data provider for the read-only status lookup (page 2).
+
+    Deliberately ignores ``MOCK_PROVIDERS`` — the simulate demo (page 1) stays mocked
+    while the lookup page hits live vendor feeds. Not cached: cheap to construct and the
+    vendor is chosen per-request.
+    """
+    if vendor == "flightaware":
+        return FlightAwareProvider(
+            api_key=settings.flightaware_api_key,
+            base_url=settings.flightaware_base_url,
+            webhook_secret=settings.flightaware_webhook_secret,
+            public_webhook_base_url=settings.public_webhook_base_url,
+        )
+    if vendor == "aerodatabox":
+        from app.providers.flightdata.aerodatabox import AeroDataBoxProvider
+
+        return AeroDataBoxProvider(
+            api_key=settings.aerodatabox_api_key,
+            base_url=settings.aerodatabox_base_url,
+            rapidapi_host=settings.aerodatabox_rapidapi_host,
+            webhook_secret=settings.aerodatabox_webhook_secret,
+            public_webhook_base_url=settings.public_webhook_base_url,
+        )
+    raise ValueError(f"Unknown vendor '{vendor}' (expected 'flightaware' or 'aerodatabox').")
+
+
 # Singletons — constructed once per process; rely on settings being populated at startup.
 _flight_provider: FlightDataProvider | None = None
 _msg_provider: MessageProvider | None = None
