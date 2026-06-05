@@ -1,13 +1,20 @@
 """FastAPI entrypoint. Wires routers and the in-process APScheduler."""
-from __future__ import annotations
-
+import logging
 from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
 from app.api import demo, policies, webhooks
+from app.config import settings
 from app.db import init_db
 from app.services.scheduler import scheduler
+
+# Configure application logging to print to stdout formatted like uvicorn
+logging.basicConfig(
+    level=getattr(logging, settings.log_level.upper(), logging.INFO),
+    format="%(levelname)s:     [%(name)s] %(message)s",
+)
+
 
 
 @asynccontextmanager
