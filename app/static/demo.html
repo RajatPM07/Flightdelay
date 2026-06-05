@@ -54,27 +54,20 @@
       font-family: 'Space Grotesk', sans-serif;
     }
 
-    /* ── Phone frame (light, form-like) ── */
+    /* ── Enrolment panel (embedded portal card) ── */
     .phone-shell {
-      width: 372px;
+      width: 380px;
       max-width: calc(100vw - 32px);
       background: #FFFFFF;
-      border-radius: 28px;
+      border-radius: 16px;
       border: 1px solid #E5E7EB;
       box-shadow:
         0 1px 2px rgba(16,24,40,0.04),
-        0 12px 32px rgba(16,24,40,0.10);
+        0 10px 28px rgba(16,24,40,0.08);
       position: relative;
-      padding: 44px 22px 28px;
+      padding: 22px;
       display: flex;
       flex-direction: column;
-    }
-    .phone-notch {
-      position: absolute;
-      top: 14px; left: 50%; transform: translateX(-50%);
-      width: 84px; height: 6px;
-      background: #E5E7EB;
-      border-radius: 999px;
     }
 
     /* ── Stepper ── */
@@ -302,24 +295,25 @@
 
   <!-- ── Top bar ── -->
   <header class="w-full px-6 lg:px-8 py-4 flex items-center justify-between bg-white border-b border-line">
-    <div class="flex items-center gap-3">
-      <div class="w-10 h-10 rounded-lg bg-primary flex items-center justify-center shrink-0">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <div class="flex items-center gap-3.5">
+      <div class="w-11 h-11 rounded-lg bg-primary flex items-center justify-center shrink-0">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M17.8 19.2L16 11l3.5-3.5C21 6 21 4 19.5 2.5S18 2 16.5 3.5L13 7 4.8 5.2a.5.5 0 0 0-.5.3l-.9 2.1c-.2.5 0 1 .4 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 4.2c.3.4.8.5 1.3.4l2.1-.9a.5.5 0 0 0 .3-.5Z"/>
         </svg>
       </div>
-      <div class="leading-tight">
-        <div class="flex items-baseline gap-2">
-          <span class="heading text-ink font-bold text-lg">ICICI Lombard</span>
-          <span class="text-muted text-xs font-body hidden sm:inline">General Insurance</span>
-        </div>
-        <div class="text-primary text-xs font-semibold font-body">TripSecure+ · Flight Delay Monitoring</div>
+      <div class="leading-none">
+        <div class="heading text-ink font-bold text-2xl tracking-tight">ICICI&nbsp;Lombard</div>
+        <div class="text-muted text-[11px] font-medium font-body mt-0.5 uppercase tracking-[0.12em]">General Insurance</div>
+        <div class="text-primary text-xs font-semibold font-body mt-1">TripSecure+ · Flight Delay Monitoring</div>
       </div>
     </div>
-    <div class="flex items-center gap-3">
+    <div class="hidden md:flex items-center gap-2">
       <span class="trust-chip"><span class="w-2 h-2 rounded-full bg-success"></span>Monitoring only</span>
-      <span class="text-xs text-muted font-body hidden md:inline">Flight Delay Monitoring Demo</span>
+      <span class="trust-chip">Product 4233</span>
+      <span class="trust-chip">WhatsApp alerts enabled</span>
+      <span class="trust-chip border-secondary/40 text-secondary">Demo environment</span>
     </div>
+    <span class="md:hidden trust-chip border-secondary/40 text-secondary">Demo</span>
   </header>
 
   <!-- ── Main split ── -->
@@ -333,10 +327,8 @@
       </div>
 
       <div class="phone-shell" id="issue-form">
-        <div class="phone-notch"></div>
-
-        <!-- Phone header -->
-        <div class="flex items-center gap-2.5 mb-5">
+        <!-- Panel header -->
+        <div class="flex items-center gap-2.5 mb-5 pb-4 border-b border-line">
           <div class="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B02A30" stroke-width="2">
               <path d="M20 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2Z"/><path d="m22 7-10 7L2 7"/>
@@ -409,6 +401,9 @@
           <!-- CTA -->
           <div class="mt-1">
             <button type="submit" id="cta-btn">
+              <svg id="cta-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+              </svg>
               <span id="cta-label">Activate Monitoring</span>
             </button>
           </div>
@@ -514,9 +509,12 @@
           </div>
         </div>
 
-        <!-- Demo event controls -->
-        <div class="card" id="sim-controls">
-          <h3 class="heading text-ink font-semibold text-sm mb-1">Demo Event Controls</h3>
+        <!-- Demo event controls (secondary) -->
+        <div class="card" id="sim-controls" style="background:#FBFCFD; border-style:dashed;">
+          <div class="flex items-center justify-between mb-1">
+            <h3 class="heading text-ink/80 font-semibold text-sm">Demo Event Controls</h3>
+            <span class="trust-chip border-secondary/40 text-secondary">Demo only</span>
+          </div>
           <p class="text-muted text-xs mb-4 font-body">Trigger a synthetic flight event to see how the customer is notified.</p>
           <div class="flex flex-wrap gap-2">
             <button class="sim-btn border-secondary/50 text-secondary" data-event="delay_t1">Delay +45m</button>
@@ -534,7 +532,13 @@
         <div class="card" id="timeline-card">
           <h3 class="heading text-ink font-semibold text-sm mb-3">Event Timeline</h3>
           <div id="timeline" class="divide-y divide-slate-100">
-            <div data-placeholder class="text-muted text-sm py-4 text-center font-body">No events yet — trigger one above.</div>
+            <div data-placeholder class="flex flex-col items-center text-center py-8 px-4">
+              <div class="w-11 h-11 rounded-full bg-slate-50 border border-line flex items-center justify-center mb-3">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+              </div>
+              <p class="text-ink/70 text-sm font-medium font-body">No flight events yet</p>
+              <p class="text-muted text-xs mt-1 font-body max-w-[260px]">Use the demo controls above to simulate a status update.</p>
+            </div>
           </div>
         </div>
 
@@ -545,7 +549,13 @@
           </div>
           <p class="text-muted text-xs mb-3 font-body">No payout or claim decision is made in this demo.</p>
           <div id="notifications">
-            <div data-placeholder class="text-muted text-sm py-2 text-center font-body">No notifications yet.</div>
+            <div data-placeholder class="flex flex-col items-center text-center py-8 px-4">
+              <div class="w-11 h-11 rounded-full bg-slate-50 border border-line flex items-center justify-center mb-3">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+              </div>
+              <p class="text-ink/70 text-sm font-medium font-body">No customer notifications yet</p>
+              <p class="text-muted text-xs mt-1 font-body max-w-[280px]">Customer notifications will appear here after a notifiable event.</p>
+            </div>
           </div>
         </div>
 
@@ -972,6 +982,8 @@
       consentError.classList.add('hidden');
 
       ctaBtn.disabled = true;
+      const ctaIcon = document.getElementById('cta-icon');
+      if (ctaIcon) ctaIcon.style.display = 'none';
       ctaLabel.innerHTML = '<div class="spinner"></div><span>Processing…</span>';
 
       const body = {
@@ -998,10 +1010,9 @@
         }
 
         policyId = data.policy_id;
+        try { sessionStorage.setItem('tsp_policy_id', policyId); } catch (_) {}
 
-        ctaBtn.style.display = 'none';
-        formSuccess.classList.remove('hidden');
-        policyDisplay.textContent = `Policy ID: ${policyId}`;
+        markActivated();
 
         await refresh();
         revealDashboard();
@@ -1009,10 +1020,18 @@
 
       } catch (err) {
         ctaBtn.disabled = false;
+        if (ctaIcon) ctaIcon.style.display = '';
         ctaLabel.textContent = 'Activate Monitoring';
         alert(`Error: ${err.message}`);
       }
     });
+
+    /* ── Show the post-activation success state on the form ── */
+    function markActivated() {
+      ctaBtn.style.display = 'none';
+      formSuccess.classList.remove('hidden');
+      policyDisplay.textContent = `Policy ID: ${policyId}`;
+    }
 
     /* ── Simulate buttons ── */
     document.querySelectorAll('[data-event]').forEach(btn => {
@@ -1048,6 +1067,27 @@
     (() => {
       const today = new Date().toISOString().slice(0, 10);
       document.getElementById('f-date').value = today;
+    })();
+
+    /* ── Rehydrate after a page refresh: restore the active policy so the
+          dashboard never shows a state without its matching history. ── */
+    (async () => {
+      let saved = null;
+      try { saved = sessionStorage.getItem('tsp_policy_id'); } catch (_) {}
+      if (!saved) return;
+      try {
+        const res = await fetch(`/policies/${saved}`);
+        if (!res.ok) { sessionStorage.removeItem('tsp_policy_id'); return; }
+        policyId = saved;
+        markActivated();
+        overlay.style.display  = 'none';
+        dashboard.style.filter = 'none';
+        document.getElementById('contact-strip').classList.remove('hidden');
+        await refresh();
+        startPolling();
+      } catch (_) {
+        try { sessionStorage.removeItem('tsp_policy_id'); } catch (_) {}
+      }
     })();
 
     window.addEventListener('beforeunload', () => {
