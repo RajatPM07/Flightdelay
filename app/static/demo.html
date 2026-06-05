@@ -830,7 +830,8 @@
         seenTimeline.add(key);
 
         const row = document.createElement('div');
-        row.className = 'timeline-row opacity-0';
+        row.className = 'timeline-row';
+        row.style.opacity = '0';
         row.dataset.key = key;
 
         const color = STATE_COLORS[ev.new_state] || '#64748B';
@@ -861,13 +862,10 @@
       });
 
       if (newRows.length > 0 && !reduce && window.gsap) {
-        gsap.to(newRows, {
-          opacity: 1, x: 0,
-          duration: 0.4,
-          stagger: 0.06,
-          ease: 'power2.out',
-          clearProps: 'all',
-        });
+        gsap.fromTo(newRows,
+          { opacity: 0, y: 6 },
+          { opacity: 1, y: 0, duration: 0.4, stagger: 0.06, ease: 'power2.out' }
+        );
       } else {
         newRows.forEach(r => { r.style.opacity = '1'; });
       }
@@ -897,7 +895,8 @@
         seenNotifs.add(key);
 
         const card = document.createElement('div');
-        card.className = 'notif-card opacity-0';
+        card.className = 'notif-card';
+        card.style.opacity = '0';
 
         const icon = CHANNEL_ICONS[n.channel?.toLowerCase()] || CHANNEL_ICONS['sms'];
         const statusColor = n.status === 'sent' ? '#15803D' : '#E8740C';
@@ -924,13 +923,9 @@
       });
 
       if (newCards.length > 0 && !reduce && window.gsap) {
-        gsap.to(newCards, {
-          opacity: 1,
-          duration: 0.4,
-          stagger: 0.07,
-          ease: 'power2.out',
-          clearProps: 'all',
-        });
+        gsap.fromTo(newCards,
+          { opacity: 0, y: 6 },
+          { opacity: 1, y: 0, duration: 0.4, stagger: 0.07, ease: 'power2.out' });
       } else {
         newCards.forEach(c => { c.style.opacity = '1'; });
       }
