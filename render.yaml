@@ -16,12 +16,24 @@ services:
       # Mock the flight-data vendor (no FlightAware/AeroDataBox keys needed).
       - key: MOCK_PROVIDERS
         value: "True"
-      # Mock messaging too (no Twilio/SendGrid; notifications are recorded, not delivered).
-      # Set to "False" + add TWILIO_* vars to send via the WhatsApp sandbox instead.
+      # Real messaging via the Twilio WhatsApp sandbox (flight data stays mocked).
       - key: MOCK_MESSAGING
-        value: "True"
+        value: "False"
       - key: APP_ENV
         value: "demo"
       - key: LOG_LEVEL
         value: "INFO"
       # DATABASE_URL intentionally unset -> app falls back to on-container SQLite.
+
+      # ---- Twilio (set these values in the Render dashboard, NOT in git) ----
+      # WhatsApp sandbox sender + trial SMS number are not secret -> kept here.
+      - key: TWILIO_WHATSAPP_FROM
+        value: "whatsapp:+14155238886"
+      - key: TWILIO_SMS_FROM
+        value: "+19132780553"
+      # Secrets -> sync:false means Render keeps the value you enter in the
+      # dashboard and never reads it from this file.
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
