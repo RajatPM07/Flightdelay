@@ -7,6 +7,7 @@ behind DEMO_MODE like the rest of the demo UI.
 """
 from __future__ import annotations
 
+from datetime import timedelta
 from pathlib import Path
 
 import httpx
@@ -141,6 +142,30 @@ async def live_reconcile(
     if not statuses:
         raise HTTPException(status_code=404, detail=f"No flight found for {flight} on {date} from any vendor.")
 
+    # Guard: vendors can resolve DIFFERENT flight occurrences for the same number/date
+    # (they interpret the date differently — local vs UTC — so an overnight flight may
+    # match yesterday on one feed and today on the other). Merging two different
+    # occurrences yields a nonsense verdict, so detect it and refuse to reconcile.
+    scheduled = sorted(s.scheduled_in_utc for s in statuses)
+    occurrence_mismatch = len(statuses) >= 2 and (scheduled[-1] - scheduled[0]) > timedelta(hours=6)
+
+    if occurrence_mismatch:
+        spread_h = round((scheduled[-1] - scheduled[0]).total_seconds() / 3600)
+        return {
+            "requested_ident": flight,
+            "flight_date": date,
+            "feeds": feeds,
+            "reconciled": None,
+            "agreement": False,
+            "occurrence_mismatch": True,
+            "explanation": (
+                f"Feeds resolved different flight occurrences (scheduled arrivals differ by ~{spread_h}h). "
+                "Vendors interpret the date differently (local vs UTC), so for an overnight flight one feed "
+                "can return yesterday's leg and the other today's. Not reconciling — inspect each feed below."
+            ),
+            "notes": "Reconciliation only applies within a single flight occurrence.",
+        }
+
     merged = reconcile(statuses)
     reconciled = _status_payload(merged)
 
@@ -162,6 +187,7 @@ async def live_reconcile(
         "feeds": feeds,
         "reconciled": reconciled,
         "agreement": agreement,
+        "occurrence_mismatch": False,
         "explanation": explanation,
         "notes": "Delay is computed from the best gate-arrival estimate (not runway touchdown).",
     }

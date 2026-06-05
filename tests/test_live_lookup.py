@@ -131,6 +131,26 @@ def test_reconcile_one_feed_down_uses_the_other(monkeypatch):
     assert fa_feed["ok"] is False
 
 
+def test_reconcile_flags_occurrence_mismatch(monkeypatch):
+    # Vendors resolved different occurrences ~24h apart (local-vs-UTC date interpretation).
+    today = FlightStatus(event_ts=_SCHED, scheduled_in_utc=_SCHED,
+                         estimated_in_utc=_SCHED + timedelta(minutes=10))
+    yesterday = FlightStatus(event_ts=_SCHED - timedelta(days=1),
+                             scheduled_in_utc=_SCHED - timedelta(days=1),
+                             actual_in_utc=_SCHED - timedelta(days=1))  # already landed
+    _inject_per_vendor(monkeypatch, {
+        "flightaware": _FakeProvider(result=today),
+        "aerodatabox": _FakeProvider(result=yesterday),
+    })
+    r = client.get("/live/reconcile", params={"flight": "G9081", "date": "2026-06-10"})
+    assert r.status_code == 200
+    d = r.json()
+    assert d["occurrence_mismatch"] is True
+    assert d["reconciled"] is None
+    assert "different flight occurrences" in d["explanation"]
+    assert all(f["ok"] for f in d["feeds"])  # both fetched fine; just not mergeable
+
+
 def test_reconcile_404_when_all_feeds_fail(monkeypatch):
     _inject_per_vendor(monkeypatch, {
         "flightaware": _FakeProvider(exc=ValueError("no flights")),

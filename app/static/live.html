@@ -128,24 +128,28 @@
 
     // Reconciled view: headline verdict + both source feeds + explanation.
     function renderReconcile(d) {
-      const s = d.reconciled;
-      const agreeColor = d.agreement ? '#15803D' : '#E8740C';
+      const mismatch = d.occurrence_mismatch || !d.reconciled;
+      const headColor = mismatch ? '#B02A30' : (d.agreement ? '#15803D' : '#E8740C');
+      const headline = mismatch
+        ? `<span class="badge" style="background:#B02A301a;color:#B02A30;border:1px solid #B02A3055">different flight occurrences</span>`
+        : `<span class="text-xs text-muted">Reconciled verdict</span> ${badge(d.reconciled.state)}`;
+      const sub = mismatch
+        ? `<div class="text-sm mt-2 text-muted">${d.requested_ident} on ${d.flight_date} — vendors returned different legs; not merged.</div>`
+        : `<div class="text-sm mt-2 text-muted">${d.requested_ident} on ${d.flight_date} · ${flagsLine(d.reconciled)} · est ${fmt(d.reconciled.estimated_in_utc)}</div>`;
       resultEl.innerHTML = `
         <div class="border border-line rounded-lg p-4">
           <div class="flex items-center justify-between flex-wrap gap-2">
-            <div class="flex items-center gap-2">
-              <span class="text-xs text-muted">Reconciled verdict</span> ${badge(s.state)}
-            </div>
-            <span class="text-xs" style="color:${agreeColor}">${d.agreement ? 'feeds agree' : 'feeds differ'}</span>
+            <div class="flex items-center gap-2">${headline}</div>
+            <span class="text-xs" style="color:${headColor}">${mismatch ? 'cannot reconcile' : (d.agreement ? 'feeds agree' : 'feeds differ')}</span>
           </div>
-          <div class="text-sm mt-2 text-muted">${d.requested_ident} on ${d.flight_date} · ${flagsLine(s)} · est ${fmt(s.estimated_in_utc)}</div>
+          ${sub}
 
           <div class="mt-3 pt-3 border-t border-line">
             <div class="text-xs text-muted mb-1">Source feeds</div>
             ${d.feeds.map(feedRow).join('')}
           </div>
 
-          <p class="text-xs mt-3 p-2 rounded" style="background:${agreeColor}12;color:#1F2937">${d.explanation}</p>
+          <p class="text-xs mt-3 p-2 rounded" style="background:${headColor}12;color:#1F2937">${d.explanation}</p>
           <p class="text-muted text-xs mt-2">${d.notes}</p>
           <p class="text-muted text-xs">Read-only — no monitoring or messages are triggered here.</p>
         </div>`;
