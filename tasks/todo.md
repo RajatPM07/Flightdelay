@@ -699,3 +699,42 @@ Set in `.env`: `FLIGHT_PROVIDER=aerodatabox`, `AERODATABOX_WEBHOOK_SECRET=<long-
   - Commit the updated `render.yaml` and `tasks/todo.md`.
   - Push the branch `claude/flightdelay-mvp-scaffold-EvfpU` to GitHub so Render detects the change and triggers a redeploy.
 
+
+---
+
+# Follow-up: vendor occurrence-disambiguation for the live lookup (page 2)
+
+**Logged:** 2026-06-05 · **Status:** open (not blocking the demo)
+
+## Context
+The `/live/reconcile` endpoint queries both vendors for a flight number + date and
+reconciles them. We discovered (flight **G9081**, 2026-06-05) that the two vendors can
+return **different flight occurrences** for the same query:
+- **FlightAware** filters by a **UTC** day window (`/flights/{ident}?start&end`) → returned
+  the 5-Jun-UTC departure (not yet departed).
+- **AeroDataBox** interprets the path `{date}` in the flight's **local** timezone
+  (`/flights/number/{n}/{date}`) → returned the 4-Jun-UTC departure (already landed).
+
+Merging two different occurrences produced a nonsense verdict (LANDED for a flight that
+hadn't left). **Shipped guard:** if the feeds' scheduled arrivals differ by > 6h, set
+`occurrence_mismatch=true`, return no merged verdict, and explain (commit 772a243).
+
+## The open question
+When vendors disagree on date interpretation, **which occurrence did the customer mean?**
+The guard currently refuses to merge, but does not pick the "right" leg.
+
+## Proposed work (Phase-2 normalization)
+- [ ] Carry **scheduled departure** (and ideally origin tz) on `FlightStatus` so occurrence
+      identity can be matched on departure, not just arrival. (Touches the brain dataclass —
+      review carefully; keep `tests/test_brain.py` green.)
+- [ ] Pass AeroDataBox `dateLocalRole` explicitly (e.g. `Departure`) and align both vendors
+      to the same date semantics (prefer the customer's local departure date).
+- [ ] In reconcile, when occurrences differ, **select the leg matching the requested date**
+      (by local departure date) instead of only flagging the mismatch; fall back to the
+      flag when neither clearly matches.
+- [ ] Tests: overnight flight where vendors split across the UTC midnight; assert the
+      correct single occurrence is chosen and reconciled.
+
+## Why deferred
+Reliable disambiguation needs departure-time + timezone awareness and a change to the core
+`FlightStatus`. The shipped mismatch-guard is the safe, honest behavior until then.
