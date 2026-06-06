@@ -1,38 +1,71 @@
-# Render Blueprint — one-click shareable demo deploy.
+# Render Blueprint — TripSecure+ Flight Delay (FULLY REAL production deploy).
 # In the Render dashboard: New > Blueprint > connect this repo. Render reads this file.
-# Free plan: public HTTPS URL, spins down after ~15 min idle (first hit cold-starts ~50s).
+# A push to the connected branch re-syncs this blueprint and redeploys (autoDeploy: true).
+# Secrets use `sync: false` — you enter them in the dashboard; they NEVER live in git.
 services:
   - type: web
-    name: tripsecure-flightdelay-demo
+    name: tripsecure-flightdelay-demo   # DO NOT rename — a new name = a new service,
+                                         # orphaning the API keys already in the dashboard.
     runtime: docker
-    plan: free
+    plan: free                          # NOTE: the free plan spins down after ~15 min idle
+                                         # (first hit cold-starts ~50s) and the in-process
+                                         # APScheduler backstop (STA+24h force-close,
+                                         # subscription deregistration) is PAUSED while
+                                         # asleep. Use a paid plan for always-on monitoring.
     dockerfilePath: ./Dockerfile
     healthCheckPath: /health
     autoDeploy: true
     envVars:
-      # Demo mode: serves the demo UI at / and the /demo/simulate route.
-      - key: DEMO_MODE
-        value: "True"
-      # Mock the flight-data vendor (no FlightAware/AeroDataBox keys needed).
-      - key: MOCK_PROVIDERS
-        value: "True"
-      # Real messaging via the Twilio WhatsApp sandbox (flight data stays mocked).
-      - key: MOCK_MESSAGING
+      # ---- Runtime mode: REAL flight data + REAL messaging --------------------
+      - key: DEMO_MODE          # Keep True: serves the issuance UI (/) and the
+        value: "True"           # multi-vendor live lookup/reconcile page (/live).
+                                # False -> both routes 404.
+      - key: MOCK_PROVIDERS     # False -> real FlightAware/AeroDataBox baseline +
+        value: "False"          # real alert registration + real inbound webhooks.
+      - key: MOCK_MESSAGING     # False -> real Twilio WhatsApp/SMS sends.
         value: "False"
       - key: APP_ENV
-        value: "demo"
+        value: "production"
       - key: LOG_LEVEL
         value: "INFO"
-      # DATABASE_URL intentionally unset -> app falls back to on-container SQLite.
 
-      # ---- Twilio (set these values in the Render dashboard, NOT in git) ----
+      # ---- Flight-data provider for issuance/monitoring ----------------------
+      # The live reconcile page (/live) always queries BOTH vendors regardless of this.
+      # This selects the vendor that issuance registers push alerts with.
+      - key: FLIGHT_PROVIDER
+        value: "flightaware"
+
+      # ---- Public base URL the vendors push webhooks to (NOT secret) ---------
+      # MUST match this service's real public URL. If you use a custom domain or
+      # Render appended a suffix to the hostname, correct this in the dashboard.
+      - key: PUBLIC_WEBHOOK_BASE_URL
+        value: "https://tripsecure-flightdelay-demo.onrender.com"
+
+      # ---- Persistence -------------------------------------------------------
+      # Supabase direct Postgres DSN:
+      #   postgresql+psycopg://postgres:<pwd>@db.<ref>.supabase.co:5432/postgres
+      # (URL-encode '@' in the password as %40). If left unset the app falls back to
+      # on-container SQLite, which is WIPED on every redeploy / spin-down — in-flight
+      # monitoring state and subscriptions are lost. Set this for real production.
+      - key: DATABASE_URL
+        sync: false
+
+      # ---- Vendor API keys + webhook secrets (set in dashboard) --------------
+      - key: FLIGHTAWARE_API_KEY
+        sync: false
+      - key: FLIGHTAWARE_WEBHOOK_SECRET   # signs the X-Fa-Signature on inbound alerts
+        sync: false
+      - key: AERODATABOX_API_KEY
+        sync: false
+      - key: AERODATABOX_WEBHOOK_SECRET   # path-segment secret in /webhooks/aerodatabox/{secret}
+        sync: false
+
+      # ---- Twilio ------------------------------------------------------------
       # WhatsApp sandbox sender + trial SMS number are not secret -> kept here.
       - key: TWILIO_WHATSAPP_FROM
         value: "whatsapp:+14155238886"
       - key: TWILIO_SMS_FROM
         value: "+19132780553"
-      # Secrets -> sync:false means Render keeps the value you enter in the
-      # dashboard and never reads it from this file.
       - key: TWILIO_ACCOUNT_SID
         sync: false
       - key: TWILIO_AUTH_TOKEN
