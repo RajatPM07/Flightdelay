@@ -26,7 +26,7 @@ from typing import Any, Optional
 import httpx
 
 from app.domain.brain import FlightStatus
-from app.providers.flightdata.base import FlightDataProvider
+from app.providers.flightdata.base import EndpointTime, FlightDataProvider, ScheduleView
 from app.providers.flightdata.carriers import normalize_flight_number
 
 logger = logging.getLogger(__name__)
@@ -104,6 +104,16 @@ class AeroDataBoxProvider(FlightDataProvider):
 
     async def get_baseline(self, flight_number: str, flight_date: str) -> FlightStatus:
         """One-shot lookup at issuance."""
+        flight = await self._lookup_flight(flight_number, flight_date)
+        status = self.normalise(flight)
+        logger.info(
+            "aerodatabox.get_baseline.ok",
+            extra={"flight_number": flight_number, "state_snapshot": status},
+        )
+        return status
+
+    async def _lookup_flight(self, flight_number: str, flight_date: str) -> dict:
+        """Fetch the single raw flight dict for this number/date (one HTTP call)."""
         url = f"{self.base_url}/flights/number/{normalize_flight_number(flight_number)}/{flight_date}"
         params = {"withAircraftImage": "false", "withLocation": "false"}
 
@@ -126,13 +136,12 @@ class AeroDataBoxProvider(FlightDataProvider):
             raise ValueError(
                 f"AeroDataBox returned no flights for {flight_number} on {flight_date}."
             )
+        return flights[0]
 
-        status = self.normalise(flights[0])
-        logger.info(
-            "aerodatabox.get_baseline.ok",
-            extra={"flight_number": flight_number, "state_snapshot": status},
-        )
-        return status
+    async def lookup_snapshot(self, flight_number: str, flight_date: str):
+        """Live page: one fetch → (brain status, localized schedule)."""
+        flight = await self._lookup_flight(flight_number, flight_date)
+        return self.normalise(flight), self.schedule_view(flight)
 
     async def register_alert(
         self, policy_id: str, flight_number: str, flight_date: str
@@ -271,6 +280,29 @@ class AeroDataBoxProvider(FlightDataProvider):
             cancelled=cancelled,
             diverted=diverted,
             content_hash=content_hash,
+        )
+
+    def schedule_view(self, raw_payload: dict) -> ScheduleView:
+        """Localized departure/arrival schedule (display only; not a brain concern).
+
+        Each airport object carries its own IANA ``timeZone``, so the live page can render
+        each end in its own local time instead of one hardcoded zone. Accepts the direct
+        flight object and the webhook envelope shapes ``_unwrap`` already handles.
+        """
+        flight = _unwrap(raw_payload)
+
+        def _endpoint(node: dict) -> EndpointTime:
+            airport = node.get("airport") or {}
+            return EndpointTime(
+                utc=_parse_adb_dt((node.get("scheduledTime") or {}).get("utc")),
+                tz=airport.get("timeZone"),
+                iata=airport.get("iata"),
+                city=airport.get("municipalityName") or airport.get("shortName"),
+            )
+
+        return ScheduleView(
+            departure=_endpoint(flight.get("departure") or {}),
+            arrival=_endpoint(flight.get("arrival") or {}),
         )
 
     def extract_subject(self, raw_payload: dict) -> tuple[str, str] | None:

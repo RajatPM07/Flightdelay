@@ -19,14 +19,18 @@ _SCHED = datetime(2026, 6, 10, 14, 30, tzinfo=timezone.utc)
 
 
 class _FakeProvider:
-    def __init__(self, *, result=None, exc=None):
+    def __init__(self, *, result=None, exc=None, schedule=None):
         self._result = result
         self._exc = exc
+        self._schedule = schedule
 
     async def get_baseline(self, flight_number: str, flight_date: str) -> FlightStatus:
         if self._exc is not None:
             raise self._exc
         return self._result
+
+    async def lookup_snapshot(self, flight_number: str, flight_date: str):
+        return await self.get_baseline(flight_number, flight_date), self._schedule
 
 
 def _inject(monkeypatch, **kwargs):
@@ -56,6 +60,30 @@ def test_happy_path_maps_ident_delay_and_state(monkeypatch):
     assert d["status"]["delay_minutes"] == 90
     assert d["status"]["state"] == "DELAYED_T2"
     assert d["status"]["departed"] is False
+
+
+def test_lookup_payload_carries_localized_schedule(monkeypatch):
+    from app.providers.flightdata.base import EndpointTime, ScheduleView
+
+    status = FlightStatus(event_ts=_SCHED, scheduled_in_utc=_SCHED)
+    schedule = ScheduleView(
+        departure=EndpointTime(utc=_SCHED, tz="Asia/Kolkata", iata="BOM", city="Mumbai"),
+        arrival=EndpointTime(utc=_SCHED, tz="Asia/Qatar", iata="DOH", city="Doha"),
+    )
+    _inject(monkeypatch, result=status, schedule=schedule)
+    r = client.get("/live/lookup", params={"flight": "6e1341", "date": "2026-06-10", "vendor": "aerodatabox"})
+    assert r.status_code == 200
+    sched = r.json()["schedule"]
+    assert sched["departure"]["tz"] == "Asia/Kolkata" and sched["departure"]["city"] == "Mumbai"
+    assert sched["arrival"]["tz"] == "Asia/Qatar" and sched["arrival"]["iata"] == "DOH"
+
+
+def test_lookup_payload_schedule_null_when_absent(monkeypatch):
+    status = FlightStatus(event_ts=_SCHED, scheduled_in_utc=_SCHED)
+    _inject(monkeypatch, result=status)  # no schedule injected
+    r = client.get("/live/lookup", params={"flight": "6e1341", "date": "2026-06-10", "vendor": "flightaware"})
+    assert r.status_code == 200
+    assert r.json()["schedule"] is None
 
 
 def test_not_found_is_friendly_404(monkeypatch):

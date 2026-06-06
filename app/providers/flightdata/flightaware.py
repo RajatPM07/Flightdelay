@@ -26,13 +26,16 @@ from zoneinfo import ZoneInfo
 import httpx
 
 from app.domain.brain import FlightStatus
-from app.providers.flightdata.base import FlightDataProvider
+from app.providers.flightdata.base import EndpointTime, FlightDataProvider, ScheduleView
 from app.providers.flightdata.carriers import resolve_icao_ident
 
 logger = logging.getLogger(__name__)
 
 # AeroAPI returns datetimes as ISO 8601 strings in UTC (ending in Z or +00:00).
 # We parse them uniformly and always store UTC-aware datetimes.
+
+# AeroAPI /flights/{ident} only serves scheduled flights ~2 days into the future.
+_FA_FUTURE_HORIZON_DAYS = 2
 
 
 def _parse_dt(value: Optional[str]) -> Optional[datetime]:
@@ -41,6 +44,21 @@ def _parse_dt(value: Optional[str]) -> Optional[datetime]:
         return None
     # AeroAPI uses 'Z' suffix; fromisoformat only handles it in 3.11+.
     return datetime.fromisoformat(value.replace("Z", "+00:00"))
+
+
+def _baseline_window(flight_date: str, now: datetime) -> tuple[str, str]:
+    """The AeroAPI [start, end] query window for a ticket date, as Z-suffixed ISO strings.
+
+    Widen +/-1 day around the ticket date so a flight departing near local midnight still
+    resolves — but CLAMP `end` to AeroAPI's ~2-day future horizon. Without the clamp, a
+    flight exactly 2 days out has its window pushed to +3 days and AeroAPI rejects it (400).
+    `start` is held at/below `end` so we never emit an inverted range for unservable dates.
+    """
+    d = _date.fromisoformat(flight_date)
+    horizon = (now + timedelta(days=_FA_FUTURE_HORIZON_DAYS)).date()
+    end_d = min(d + timedelta(days=1), horizon)
+    start_d = min(d - timedelta(days=1), end_d)
+    return (f"{start_d}T00:00:00Z", f"{end_d}T23:59:59Z")
 
 
 def _origin_local_date(flight: dict) -> Optional[str]:
@@ -131,13 +149,19 @@ class FlightAwareProvider(FlightDataProvider):
         The customer-entered IATA ident is resolved to its ICAO form first — AeroAPI
         returns zero flights for an IATA ident (e.g. 6E1341 -> IGO1341).
         """
+        flight = await self._lookup_flight(flight_number, flight_date)
+        status = self.normalise(flight)
+        logger.info(
+            "aeroapi.get_baseline.ok",
+            extra={"flight_number": flight_number, "state_snapshot": status},
+        )
+        return status
+
+    async def _lookup_flight(self, flight_number: str, flight_date: str) -> dict:
+        """Fetch + select the single raw flight dict for this ident/date (one HTTP call)."""
         ident = resolve_icao_ident(flight_number)
         url = f"{self.base_url}/flights/{ident}"
-        d = _date.fromisoformat(flight_date)
-        params = {
-            "start": f"{d - timedelta(days=1)}T00:00:00Z",
-            "end": f"{d + timedelta(days=1)}T23:59:59Z",
-        }
+        start, end = _baseline_window(flight_date, datetime.now(timezone.utc))
 
         logger.info(
             "aeroapi.get_baseline",
@@ -150,17 +174,18 @@ class FlightAwareProvider(FlightDataProvider):
         )
 
         async with httpx.AsyncClient(timeout=15.0) as client:
-            resp = await client.get(url, headers=self._headers(), params=params)
+            resp = await client.get(
+                url, headers=self._headers(), params={"start": start, "end": end}
+            )
             resp.raise_for_status()
             data = resp.json()
 
-        flight = self._select_flight(data, flight_date)
-        status = self.normalise(flight)
-        logger.info(
-            "aeroapi.get_baseline.ok",
-            extra={"flight_number": flight_number, "state_snapshot": status},
-        )
-        return status
+        return self._select_flight(data, flight_date)
+
+    async def lookup_snapshot(self, flight_number: str, flight_date: str):
+        """Live page: one fetch → (brain status, localized schedule)."""
+        flight = await self._lookup_flight(flight_number, flight_date)
+        return self.normalise(flight), self.schedule_view(flight)
 
     async def register_alert(
         self, policy_id: str, flight_number: str, flight_date: str
@@ -277,6 +302,31 @@ class FlightAwareProvider(FlightDataProvider):
             cancelled=cancelled,
             diverted=diverted,
             content_hash=_content_hash(estimated_in, actual_in, actual_off, cancelled, diverted),
+        )
+
+    def schedule_view(self, raw_payload: dict) -> ScheduleView:
+        """Localized departure/arrival schedule (display only; not a brain concern).
+
+        AeroAPI gives scheduled times in UTC plus origin/destination IANA timezones, so the
+        live page can render each end in its OWN airport's local time instead of one hardcoded
+        zone. Accepts both the direct flight object and the alert webhook envelope.
+        """
+        flight = raw_payload.get("flight", raw_payload)
+        origin = flight.get("origin") or {}
+        dest = flight.get("destination") or {}
+        return ScheduleView(
+            departure=EndpointTime(
+                utc=_parse_dt(flight.get("scheduled_out")),
+                tz=origin.get("timezone"),
+                iata=origin.get("code_iata"),
+                city=origin.get("city"),
+            ),
+            arrival=EndpointTime(
+                utc=_parse_dt(flight.get("scheduled_in")),
+                tz=dest.get("timezone"),
+                iata=dest.get("code_iata"),
+                city=dest.get("city"),
+            ),
         )
 
     # ------------------------------------------------------------------

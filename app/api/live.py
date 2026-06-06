@@ -18,6 +18,7 @@ from app.config import settings
 from app.deps import get_brain_config, get_lookup_provider
 from app.domain.brain import FlightStatus, _delay_minutes
 from app.domain.reconcile import reconcile
+from app.providers.flightdata.base import ScheduleView
 from app.providers.flightdata.carriers import normalize_flight_number, resolve_icao_ident
 from app.services.issuance import _state_from_baseline
 
@@ -50,9 +51,27 @@ def _http_error_detail(vendor: str, exc: httpx.HTTPStatusError) -> tuple[int, st
     return 502, "Upstream flight provider error."
 
 
-async def _fetch(vendor: str, flight: str, date: str) -> FlightStatus:
-    """Raise httpx/ValueError up to the caller, which maps them to responses."""
-    return await get_lookup_provider(vendor).get_baseline(flight, date)
+async def _fetch(vendor: str, flight: str, date: str) -> tuple[FlightStatus, ScheduleView | None]:
+    """Raise httpx/ValueError up to the caller, which maps them to responses.
+
+    Returns the brain status AND a localized schedule (departure/arrival in each airport's
+    own timezone) so the page can show the customer the time on their ticket.
+    """
+    return await get_lookup_provider(vendor).lookup_snapshot(flight, date)
+
+
+def _endpoint_payload(ep) -> dict:
+    return {"utc": ep.utc, "tz": ep.tz, "iata": ep.iata, "city": ep.city}
+
+
+def _schedule_payload(view: ScheduleView | None) -> dict | None:
+    """Localized departure/arrival for display. None when the vendor gave no schedule."""
+    if view is None:
+        return None
+    return {
+        "departure": _endpoint_payload(view.departure),
+        "arrival": _endpoint_payload(view.arrival),
+    }
 
 
 def _status_payload(status: FlightStatus) -> dict:
@@ -88,7 +107,7 @@ async def live_lookup(
     flight = flight.strip().upper()
 
     try:
-        status = await _fetch(vendor, flight, date)
+        status, schedule = await _fetch(vendor, flight, date)
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=f"No flight found for {flight} on {date}.") from exc
     except httpx.HTTPStatusError as exc:
@@ -103,6 +122,7 @@ async def live_lookup(
         "resolved_ident": _resolved_ident(vendor, flight),
         "flight_date": date,
         "status": _status_payload(status),
+        "schedule": _schedule_payload(schedule),
         "notes": "Delay is computed from the best gate-arrival estimate (not runway touchdown).",
     }
 
@@ -118,9 +138,10 @@ async def live_reconcile(
 
     feeds: list[dict] = []
     statuses: list[FlightStatus] = []
+    schedules: list[ScheduleView] = []
     for vendor in _VENDORS:
         try:
-            status = await _fetch(vendor, flight, date)
+            status, schedule = await _fetch(vendor, flight, date)
         except ValueError:
             feeds.append({"vendor": vendor, "ok": False, "error": "No flight found for this date."})
             continue
@@ -132,11 +153,14 @@ async def live_reconcile(
             feeds.append({"vendor": vendor, "ok": False, "error": "Could not reach this provider."})
             continue
         statuses.append(status)
+        if schedule is not None:
+            schedules.append(schedule)
         feeds.append({
             "vendor": vendor,
             "ok": True,
             "resolved_ident": _resolved_ident(vendor, flight),
             "status": _status_payload(status),
+            "schedule": _schedule_payload(schedule),
         })
 
     if not statuses:
@@ -181,11 +205,15 @@ async def live_reconcile(
             "a lifecycle signal seen by any feed wins; a diverging feed is usually just lagging."
         )
 
+    # Arrival timezone for rendering the reconciled ETA in the destination's local time.
+    arrival_tz = next((s.arrival.tz for s in schedules if s.arrival.tz), None)
+
     return {
         "requested_ident": flight,
         "flight_date": date,
         "feeds": feeds,
         "reconciled": reconciled,
+        "arrival_tz": arrival_tz,
         "agreement": agreement,
         "occurrence_mismatch": False,
         "explanation": explanation,

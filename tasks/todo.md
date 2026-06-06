@@ -825,3 +825,48 @@ For **G9081** on 2026-06-05 the two vendors returned occurrences ~24h apart. Raw
       explicitly. Touches the core brain dataclass — review carefully; keep
       `tests/test_brain.py` green. With the FlightAware fix in place this is now an edge
       hardening, not a correctness gap for the common case.
+
+---
+
+# Plan — Fix two live-page bugs (FlightAware 2-day window + AeroDataBox time display)
+
+## Diagnosis (root cause, evidence-backed)
+- **Bug 2 — "scheduled shows 1:40 AM, actually 10:30":** NOT a parse bug. The value is the
+  scheduled *arrival* (`scheduled_in_utc`), correctly parsed to UTC. `live.html` `fmt()` force-renders
+  EVERY time in hardcoded `Asia/Kolkata IST`. For 6E1341 (BOM→DOH) arrival `20:10Z` → `01:40 AM IST`
+  (reproduced exactly). The departure on the ticket is `10:15 PM IST`. So: row shows arrival, user
+  reads departure, and IST is wrong for a non-India airport. Payload (`_status_payload`) only ships
+  `*_utc` — frontend has no departure time / no airport tz to do better.
+- **Bug 1 — FlightAware "only ~2 days":** real AeroAPI limit. `get_baseline` widens window to
+  `flight_date + 1d`, pushing a flight *exactly* 2 days out to a guaranteed 400 (verified).
+
+## Decisions (confirmed with user)
+- Bug 2: **show both, in local zones** — departure (origin-local) + arrival (arrival-airport-local).
+- Bug 1: **clamp the query window** — `end = min(flight_date + 1d, now + 2d)`.
+
+## Constraints
+- Brain stays pure & arrival-centric: **do NOT** add departure/tz fields to `FlightStatus`.
+- Fetch each vendor **once** (AeroDataBox = 1 req/s, FlightAware costs money) → presentation must
+  come from the SAME response, not a second call.
+
+## Steps
+- [x] `base.py`: add `EndpointTime` + `ScheduleView` dataclasses; `schedule_view(raw)->None` default;
+      `lookup_snapshot()` default = `(get_baseline(), None)`.
+- [x] `flightaware.py`: extract pure `_baseline_window(date, now)` clamp; refactor fetch into
+      `_lookup_flight`; add `schedule_view`; override `lookup_snapshot` (one fetch → status+schedule).
+- [x] `aerodatabox.py`: refactor fetch into `_lookup_flight`; add `schedule_view`; override
+      `lookup_snapshot`.
+- [x] `live.py`: call `lookup_snapshot`; add `schedule` to each feed payload; pass arrival tz to verdict.
+- [x] `live.html`: `fmt(dt, tz)` (default IST for illustrative demos); vendorCard Departure/Arrival
+      rows in local zones; verdict ETA in arrival tz. Graceful fallback when `feed.schedule` absent.
+- [x] Tests: `_baseline_window` clamp unit test; `schedule_view` for both providers from fixtures;
+      update `test_live_lookup` fake to `lookup_snapshot` + assert schedule in payload.
+- [x] Run full suite green; ruff clean.
+
+## Review (done)
+- 154 passing (was 112 at handoff; +6 new: 4 schedule_view, 3 window — wait, 7 new across 2 files).
+- Bug 2 verified: BOM→DOH 6E1341 now renders **Departure 10:15 PM (Mumbai)** + **Sched arrival 11:10 PM (Doha)**
+  instead of the misleading "01:40 AM IST". Each end in its OWN airport tz; brain untouched (still UTC/arrival-only).
+- Bug 1 verified: `_baseline_window` clamps `end` to now+2d so a flight exactly 2 days out no longer 400s.
+- Backward-compat: illustrative demo cards (no `schedule`) fall back to the old single IST row.
+- NOTE: `ruff` not installed in `.venv` — lint step skipped (could not run).

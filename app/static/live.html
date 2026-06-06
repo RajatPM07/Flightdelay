@@ -407,7 +407,19 @@ const STATE_STYLE = {
 };
 const STATE_LABEL = {REGISTERED:'Registered',ON_TIME:'On time',DELAYED_T1:'Delayed — Tier 1',DELAYED_T2:'Delayed — Tier 2',DELAYED_T3:'Delayed — Tier 3',DEPARTED:'Departed',LANDED:'Landed',CANCELLED:'Cancelled',DIVERTED:'Diverted'};
 
-function fmt(dt){ if(!dt) return '—'; try{ return new Date(dt).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',timeZone:'Asia/Kolkata'})+' IST'; }catch{ return dt; } }
+/* Format a UTC instant in a given IANA zone. Defaults to IST (used by the illustrative
+   demos, which carry no per-airport schedule). Pass a tz to render in the airport's own
+   local time — e.g. an arrival in Doha shows Doha time, not IST. */
+function fmt(dt, tz){
+  if(!dt) return '—';
+  const zone = tz || 'Asia/Kolkata';
+  try{
+    const t = new Date(dt).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',timeZone:zone});
+    return tz ? t : t+' IST';
+  }catch{ return dt; }
+}
+/* Short place + zone tag for a schedule endpoint, e.g. "BOM · 10:15 PM". */
+function placeTag(ep){ if(!ep) return ''; const p = ep.iata || ep.city; return p ? ` <span style="color:var(--slate-400);font-weight:600">${p}</span>` : ''; }
 function stBadge(state){ const s=STATE_STYLE[state]||STATE_STYLE.REGISTERED; return `<span class="vc-badge" style="background:${s.bg};color:${s.c};border-color:${s.b}"><span style="width:7px;height:7px;border-radius:50%;background:${s.d};display:inline-block"></span>${STATE_LABEL[state]||state}</span>`; }
 
 /* ---- vendor card from a normalized feed ---- */
@@ -416,12 +428,27 @@ function vendorCard(vendorKey, feed){
   const head = `<div class="vc-head"><div class="vc-vendor"><div class="vc-icon" style="background:${m.ibg};color:${m.ic}">${m.icon}</div><div class="vc-name">${m.name}<small>${m.sub}</small></div></div>${feed.updated?`<span class="vc-updated ${feed.stale?'stale':''}">${feed.updated}</span>`:''}</div>`;
   if(!feed.ok){ return `<div class="vendor-card">${head}<div class="vc-body"><div class="vc-err">${feed.error||'No data'}</div></div></div>`; }
   const s=feed.status;
+  const sch=feed.schedule;  // {departure:{utc,tz,iata,city}, arrival:{...}} or null (illustrative demos)
   const delay = s.delay_minutes==null ? '—' : (s.delay_minutes===0?'On schedule':`+${s.delay_minutes} min`);
   const dep = s.departed?'<span class="vc-rowval fresh">Yes</span>':'<span class="vc-rowval muted">No</span>';
+  // Estimated arrival rendered in the ARRIVAL airport's local zone when known.
+  const arrTz = sch && sch.arrival ? sch.arrival.tz : null;
+  let timeRows;
+  if(sch){
+    // Real feed: show departure (origin-local) AND scheduled arrival (destination-local).
+    timeRows = `
+      <div class="vc-row"><span class="vc-rowlabel">Departure</span><span class="vc-rowval">${fmt(sch.departure.utc, sch.departure.tz)}${placeTag(sch.departure)}</span></div>
+      <div class="vc-row"><span class="vc-rowlabel">Sched. arrival</span><span class="vc-rowval">${fmt(s.scheduled_in_utc, arrTz)}${placeTag(sch.arrival)}</span></div>
+      <div class="vc-row"><span class="vc-rowlabel">Est. arrival</span><span class="vc-rowval ${feed.highlightEta?'highlight':''}">${fmt(s.estimated_in_utc, arrTz)}</span></div>`;
+  } else {
+    // Illustrative demo data (no schedule): fall back to the prior IST single-row view.
+    timeRows = `
+      <div class="vc-row"><span class="vc-rowlabel">Scheduled</span><span class="vc-rowval">${fmt(s.scheduled_in_utc)}</span></div>
+      <div class="vc-row"><span class="vc-rowlabel">Estimated</span><span class="vc-rowval ${feed.highlightEta?'highlight':''}">${fmt(s.estimated_in_utc)}</span></div>`;
+  }
   const rows = `<div class="vc-rows">
       <div class="vc-row"><span class="vc-rowlabel">Ident</span><span class="vc-rowval">${feed.resolved_ident||'—'}</span></div>
-      <div class="vc-row"><span class="vc-rowlabel">Scheduled</span><span class="vc-rowval">${fmt(s.scheduled_in_utc)}</span></div>
-      <div class="vc-row"><span class="vc-rowlabel">Estimated</span><span class="vc-rowval ${feed.highlightEta?'highlight':''}">${fmt(s.estimated_in_utc)}</span></div>
+      ${timeRows}
       <div class="vc-row"><span class="vc-rowlabel">Delay</span><span class="vc-rowval ${s.delay_minutes>=60?'highlight':(s.delay_minutes>0?'':'muted')}">${delay}</span></div>
       <div class="vc-row"><span class="vc-rowlabel">Departed</span>${dep}</div>
     </div>`;
@@ -440,7 +467,7 @@ function verdictCard(v){
   if(!v.mismatch){
     const delay = v.delay_minutes==null?'—':(v.delay_minutes===0?'On schedule':`+${v.delay_minutes} min`);
     rows = `<div class="verdict-rows">
-        <div class="verdict-row"><span class="vrlabel">Estimated arrival</span><span class="vrval key">${fmt(v.eta)}${v.etaSrc?` <span style="color:var(--slate-400);font-weight:600">← ${v.etaSrc}</span>`:''}</span></div>
+        <div class="verdict-row"><span class="vrlabel">Estimated arrival</span><span class="vrval key">${fmt(v.eta, v.etaTz)}${v.etaSrc?` <span style="color:var(--slate-400);font-weight:600">← ${v.etaSrc}</span>`:''}</span></div>
         <div class="verdict-row"><span class="vrlabel">Delay</span><span class="vrval">${delay}</span></div>
       </div>`;
   }
@@ -476,7 +503,7 @@ function renderReconcile(d){
   } else {
     const r=d.reconciled||{};
     verdict = {
-      mismatch:false, agree:d.agreement, state:r.state, eta:r.estimated_in_utc, delay_minutes:r.delay_minutes,
+      mismatch:false, agree:d.agreement, state:r.state, eta:r.estimated_in_utc, etaTz:d.arrival_tz, delay_minutes:r.delay_minutes,
       decision: d.agreement ? 'Feeds agree — single verdict' : 'Feeds reconciled by engine priority',
       note: d.explanation, illustrative:false,
     };
