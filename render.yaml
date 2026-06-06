@@ -15,6 +15,8 @@ services:
     dockerfilePath: ./Dockerfile
     healthCheckPath: /health
     autoDeploy: true
+    envVarGroups:
+      - name: Whatsapp_Flightdelay
     envVars:
       # ---- Runtime mode: REAL flight data + REAL messaging --------------------
       - key: DEMO_MODE          # Keep True: serves the issuance UI (/) and the
