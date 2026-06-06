@@ -1,3 +1,95 @@
+# Plan — Wire "Claude Design" prototypes to the real backend (drop-in, monitoring-only)
+
+## Context / the mismatch we corrected
+The pasted integration brief (auto-generated `Claude Design/Developer Handoff.html` §06) describes a
+**claims/payout** product — `/api/claims`, `/api/documents/upload`, `estimatedPayout`, an
+"airline / insurer / payment processor" status board. That is **wrong** for this repo:
+- `CLAUDE.md` hard rule: moves NO money, no payout/claim/compensation language anywhere.
+- The actual shipped screens are **monitoring-only**; their own footers say
+  *"No money is moved and no claim decision is made."*
+
+Decision (confirmed with user): **drop-in static replacement, monitoring-only.** Wire the prototypes
+to endpoints that **already exist**; build NO new backend endpoints; ignore the claims/leads parts.
+
+## Real endpoint mapping (already exist + tested)
+| Prototype action | Real endpoint |
+|---|---|
+| Simulator "Issue policy" | `POST /policies` |
+| Simulator fire events | `POST /demo/simulate {policy_id, event}` |
+| Simulator read state/timeline | `GET /policies/{id}` |
+| Multi-vendor "Reconcile both" | `GET /live/reconcile?flight=&date=` |
+| Multi-vendor "One feed" / edge cases | `GET /live/lookup?flight=&date=&vendor=` |
+
+`VALID_EVENTS = delay_t1, delay_t2, delay_t3, recover, depart, land, cancel, divert`
+
+## Key constraints discovered
+- `get_lookup_provider` **ignores MOCK_PROVIDERS** → page 2 always hits REAL vendors (needs API keys);
+  page 1 works fully offline under `MOCK_PROVIDERS=True`.
+- Existing tests assert DOM markers of the *current* design (`Space Grotesk`, `gsap.min.js`,
+  `id="issue-form"`, `id="stepper"`, `id="payload-console"`, `prefers-reduced-motion`). The redesign
+  changes these → page tests must be updated to the new DOM.
+- `test_live_lookup.py` is API-only (mocks provider) → stays green, do not touch the API.
+- Fonts: screens use **Plus Jakarta Sans (CDN)** only. Mulish/Proxima `assets/` files are unused by the
+  screens (logo lockup only). Logo SVG ~11KB → inline it; no static mount needed.
+
+## Judgment calls (defaults)
+1. **Issuance form gap** — prototype collects only flight/origin/dest/date, but `POST /policies` needs
+   pnr/name/phone/consent. Default: one-click issue with auto-filled demo passenger
+   (PNR `TSPDEMO`, "Demo Passenger", `+919999999999`, consent true) + truthful "demo passenger · consent
+   on file" caption.  ← confirm (DPDP-sensitive).
+2. **"Wobble +95m" button** — no backend event → map to `delay_t2` re-fire (same tier ⇒ logged silently;
+   the exact lesson). Decided.
+3. **Decision log source** — render from REAL `GET /policies/{id}` timeline (`notified` flags, state
+   transitions); human note text derived client-side (presentational only). Decided.
+4. **Multi-vendor scenario tabs** — keep the 3 canned tabs (agree/diverge/depart) but **label them
+   "Illustrative — canned"** so nothing fake reads as live; the lookup form + edge-case "try it" buttons
+   are the REAL calls. Decided (data-integrity).
+
+## Tasks
+- [ ] Confirm judgment call #1 (issuance form).
+- [ ] Rebuild `app/static/demo.html` from Simulator.html, wired to `/policies` + `/demo/simulate` +
+      `/policies/{id}`; inline logo; add `prefers-reduced-motion`.
+- [ ] Rebuild `app/static/live.html` from Multi-vendor Status.html, wired to `/live/reconcile` +
+      `/live/lookup`; canned tabs labeled illustrative; fold in real edge-case "try it" buttons.
+- [ ] Add `app/static/landing.html` from the landing prototype; CTAs → `/` and `/live`; drop lead capture.
+- [ ] Add `GET /landing` route in `app/api/demo.py` (demo-gated, FileResponse).
+- [ ] Update `tests/test_demo_page.py` + `tests/test_live_page.py` to new DOM markers; add `/landing` test.
+- [ ] `ruff check .` clean; `.venv/bin/python -m pytest -q` all green.
+- [ ] Run `DEMO_MODE=True MOCK_PROVIDERS=True` server; exercise page-1 issue→events (3 notifications,
+      LANDED), page-2 render + graceful no-key error + canned scenarios, landing CTAs.
+
+## Review (done — 2026-06-06)
+**Outcome:** drop-in static replacement, monitoring-only. Brain (`app/domain/`) and all API
+endpoints untouched; only serving routes + static pages + page tests changed.
+
+Changed:
+- `app/static/demo.html` — rebuilt (Simulator). Full issuance form (PNR/name/phone/email + **consent**,
+  per user's choice) → `POST /policies`; event buttons → `POST /demo/simulate`; decision log + state +
+  notif count rendered from `GET /policies/{id}`. "Wobble" = re-fire `delay_t2` (silent). Kept the IDs the
+  page test expects; added `prefers-reduced-motion`; logo via `/static/assets/logo.svg`.
+- `app/static/live.html` — rebuilt (Multi-vendor). Lookup form → real `/live/reconcile` + `/live/lookup`;
+  edge-case "try it" = real calls; 3 scenario tabs **labelled "Illustrative — canned"**. Preserved the
+  IDs `test_live_page.py` asserts (no test change needed).
+- `app/static/landing.html` — new served page; CTAs → `/` and `/live`; lead-capture dropped; reduced-motion guard.
+- `app/api/demo.py` — `GET /landing` (demo-gated). `app/main.py` — mount `/static/assets` ONLY (HTML stays gated).
+- `tests/test_demo_page.py` — markers updated to new DOM (drop Space Grotesk/gsap; assert Plus Jakarta Sans,
+  consent control, real endpoints). `tests/test_landing_page.py` — new (served, 404-when-off, links, no payout/claim).
+- **Compliance fix:** removed payout/claim language the designer's copy carried (landing FAQ "Will I get a
+  payout automatically?", footers "no claim decision is made") → pure monitoring framing across all 3 pages.
+
+**Verification:**
+- `pytest -q` → **145 passed**. `py_compile` clean. (ruff not installed in this venv.)
+- Live server (`DEMO_MODE=True MOCK_PROVIDERS=True`): `/`, `/live`, `/landing`, `/static/assets/logo.svg`,
+  `/health` all 200. End-to-end page-1: issue→`delay_t1/t2/t2/t3/depart/land` → `GET /policies/{id}` shows
+  `current_state=LANDED`, 5 notifications, the 2nd `delay_t2` logged silently (`NONE/notified:false`), PII
+  masked (`Demo P.`, `+91 99••••99`). Page-2 degrades gracefully (clean 404/400 `detail` JSON; real upstream
+  400 confirms vendor keys are configured, so it's genuinely live for near-term flights).
+
+**Open:** page 2 needs vendor API keys (`get_lookup_provider` ignores MOCK) — works only for real near-term
+flights; canned tabs cover the offline/divergence story. `Claude Design/` source folder left untracked.
+
+---
+
 # AeroDataBox Push-Webhook Provider — Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.

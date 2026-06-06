@@ -18,7 +18,9 @@ from app.services.simulator import simulate_event
 
 router = APIRouter(tags=["demo"])
 
-_PAGE = Path(__file__).resolve().parent.parent / "static" / "demo.html"
+_STATIC = Path(__file__).resolve().parent.parent / "static"
+_PAGE = _STATIC / "demo.html"
+_LANDING = _STATIC / "landing.html"
 
 
 def _require_demo() -> None:
@@ -30,6 +32,12 @@ def _require_demo() -> None:
 async def demo_page() -> FileResponse:
     _require_demo()
     return FileResponse(_PAGE, media_type="text/html")
+
+
+@router.get("/landing")
+async def landing_page() -> FileResponse:
+    _require_demo()
+    return FileResponse(_LANDING, media_type="text/html")
 
 
 class SimulateRequest(BaseModel):

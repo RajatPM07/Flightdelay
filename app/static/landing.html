@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>TripSecure+ · Flight Delay Monitoring — ICICI Lombard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+/* ── Elevate Design Language Tokens ─────────────────────────── */
+:root{
+  --brand:#E8590C; --brand-bright:#F26722; --brand-dark:#C2470A;
+  --o-50:#FFF5EE; --o-100:#FFE7D6; --o-200:#FFC9A6; --o-300:#FBA470;
+  --maroon:#B02A30; --maroon-bg:#FDF1F1;
+  --teal:#0E6B86; --teal-bg:#E7F4F8;
+  --ink-900:#16171C; --ink-700:#33363E;
+  --slate-600:#565B66; --slate-500:#6E7480; --slate-400:#9AA0AB;
+  --line:#ECEDF1; --line-strong:#E0E2E8;
+  --surface-100:#F3F4F7; --surface-50:#FAFAFB;
+  --paper:#FBFAF8; --white:#FFFFFF;
+  --blue:#3B7DFF; --blue-bg:#EAF1FF;
+  --green:#16A34A; --green-dot:#22C55E; --green-bg:#E4F7EC;
+  --amber:#F39A0B; --amber-bg:#FFF4DF;
+  --red:#E5484D;
+  --grad-policy:linear-gradient(135deg,#EEF1FF 0%,#F4F1FF 48%,#FCF3EF 100%);
+  --r-xs:6px; --r-sm:10px; --r-md:12px; --r-lg:16px;
+  --r-xl:22px; --r-2xl:28px; --r-pill:999px;
+  --sh-sm:0 1px 2px rgba(16,18,23,.04),0 1px 3px rgba(16,18,23,.05);
+  --sh-card:0 2px 14px rgba(20,22,28,.05);
+  --sh-md:0 8px 26px -8px rgba(20,22,28,.12);
+  --sh-lg:0 22px 50px -18px rgba(20,22,28,.22);
+  --font:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html{scroll-behavior:smooth;}
+body{font-family:var(--font);background:var(--paper);color:var(--ink-900);
+  -webkit-font-smoothing:antialiased;line-height:1.5;}
+::selection{background:var(--o-200);}
+
+/* ── Layout ── */
+.wrap{max-width:1160px;margin:0 auto;padding:0 44px;}
+@media(max-width:768px){.wrap{padding:0 20px;}}
+
+/* ── Type helpers ── */
+.eyebrow{font-size:12px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--brand);display:flex;align-items:center;gap:9px;}
+.eyebrow::before{content:"";width:18px;height:2px;background:var(--brand);border-radius:2px;}
+
+/* ── Entrance animations ── */
+.reveal{opacity:0;transform:translateY(22px);transition:opacity .55s ease,transform .55s ease;}
+.reveal.visible{opacity:1;transform:none;}
+.reveal-delay-1{transition-delay:.1s;}
+.reveal-delay-2{transition-delay:.2s;}
+.reveal-delay-3{transition-delay:.3s;}
+.reveal-delay-4{transition-delay:.4s;}
+@media (prefers-reduced-motion: reduce){.reveal{opacity:1 !important;transform:none !important;transition:none !important;}*{animation:none !important;scroll-behavior:auto !important;}}
+
+/* ══════════════════════════════════════
+   NAV
+══════════════════════════════════════ */
+.topbar{position:sticky;top:0;z-index:50;
+  background:rgba(251,250,248,.86);backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--line);}
+.topbar .wrap{display:flex;align-items:center;justify-content:space-between;height:68px;gap:24px;}
+.nav-brand{display:flex;align-items:center;gap:12px;text-decoration:none;}
+.nav-icon{width:38px;height:38px;border-radius:10px;background:var(--maroon);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.nav-name{font-size:17px;font-weight:800;color:var(--ink-900);letter-spacing:-.02em;}
+.nav-sub{font-size:11px;font-weight:600;color:var(--maroon);letter-spacing:.04em;
+  text-transform:uppercase;margin-top:1px;}
+.nav-links{display:flex;gap:28px;align-items:center;}
+.nav-links a{color:var(--slate-600);text-decoration:none;font-size:14px;font-weight:600;
+  transition:color .15s;}
+.nav-links a:hover{color:var(--brand);}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  font-family:var(--font);font-weight:700;font-size:14.5px;border-radius:var(--r-md);
+  padding:12px 22px;border:1.5px solid transparent;cursor:pointer;
+  transition:all .15s ease;letter-spacing:-.01em;text-decoration:none;}
+.btn-primary{background:var(--brand);color:#fff;
+  box-shadow:0 5px 16px -5px rgba(232,89,12,.5);}
+.btn-primary:hover{background:var(--brand-bright);box-shadow:0 7px 20px -6px rgba(232,89,12,.6);}
+.btn-secondary{background:var(--white);color:var(--brand);border-color:var(--o-200);}
+.btn-secondary:hover{background:var(--o-50);}
+.btn-ghost{background:transparent;color:var(--slate-600);border-color:var(--line);}
+.btn-ghost:hover{background:var(--surface-100);color:var(--ink-900);}
+.btn-lg{padding:16px 30px;font-size:16px;}
+@media(max-width:768px){.nav-links{display:none;}.nav-icon{width:34px;height:34px;border-radius:9px;}}
+
+/* ══════════════════════════════════════
+   HERO
+══════════════════════════════════════ */
+.hero{padding:88px 0 80px;overflow:hidden;
+  background:radial-gradient(110% 90% at 70% -10%,var(--o-50) 0%,transparent 58%),var(--paper);}
+.hero-inner{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center;}
+.hero-badge-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:28px;}
+.hbadge{display:inline-flex;align-items:center;gap:7px;padding:6px 13px;
+  border-radius:var(--r-pill);font-size:12px;font-weight:700;border:1px solid;}
+.hbadge-maroon{background:var(--maroon-bg);color:var(--maroon);border-color:rgba(176,42,48,.2);}
+.hbadge-green{background:var(--green-bg);color:var(--green);border-color:rgba(22,163,74,.25);}
+.hbadge-green .dot{width:7px;height:7px;border-radius:50%;background:var(--green-dot);}
+.hero h1{font-size:58px;line-height:1.02;letter-spacing:-.04em;font-weight:800;
+  max-width:14ch;text-wrap:pretty;}
+.hero h1 em{font-style:normal;color:var(--brand);}
+.hero-sub{font-size:18px;color:var(--slate-600);max-width:48ch;margin-top:20px;
+  line-height:1.65;text-wrap:pretty;}
+.hero-ctas{display:flex;gap:12px;margin-top:32px;flex-wrap:wrap;}
+.trust-row{display:flex;gap:18px;flex-wrap:wrap;margin-top:28px;}
+.trust-chip{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;
+  font-weight:600;color:var(--slate-500);}
+.trust-chip svg{color:var(--green);flex-shrink:0;}
+
+/* ── Hero visual ── */
+.hero-visual{position:relative;display:flex;justify-content:center;}
+.hv-stack{position:relative;width:340px;}
+
+/* flight card */
+.hv-card{background:var(--grad-policy);border:1px solid #E0DCEF;border-radius:var(--r-2xl);
+  padding:24px;box-shadow:var(--sh-lg);}
+.hv-card-top{display:flex;justify-content:space-between;align-items:center;}
+.hv-logo{font-weight:800;font-size:19px;letter-spacing:-.03em;color:var(--brand);}
+.st-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;
+  border-radius:var(--r-pill);font-size:12px;font-weight:700;}
+.st-green{background:var(--green-bg);color:var(--green);border:1px solid rgba(22,163,74,.25);}
+.st-red{background:var(--maroon-bg);color:var(--maroon);border:1px solid rgba(176,42,48,.25);}
+.st-amber{background:var(--amber-bg);color:var(--amber);border:1px solid rgba(243,154,11,.25);}
+.hv-route{display:flex;align-items:center;justify-content:space-between;margin:22px 0 6px;}
+.hv-iata{font-size:28px;font-weight:800;letter-spacing:-.03em;color:var(--ink-900);}
+.hv-line{flex:1;height:1.5px;background:linear-gradient(90deg,var(--line),var(--blue),var(--line));
+  margin:0 12px;position:relative;}
+.hv-plane{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  background:var(--white);padding:0 4px;color:var(--teal);}
+.hv-meta{display:flex;justify-content:space-between;font-size:12px;color:var(--slate-500);font-weight:500;}
+.hv-divider{height:1px;background:var(--line);margin:14px 0;}
+.hv-pax{display:flex;align-items:center;gap:9px;font-size:13px;}
+.hv-pax .av{width:28px;height:28px;border-radius:50%;background:var(--o-100);color:var(--brand);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.hv-pax .name{font-weight:700;color:var(--ink-900);}
+.hv-pax .pnr{font-size:11px;color:var(--slate-400);font-family:monospace;}
+
+/* floating elements */
+.hv-float-delay{position:absolute;top:-18px;right:-24px;
+  background:var(--white);border:1px solid rgba(176,42,48,.25);
+  border-radius:var(--r-pill);padding:8px 14px;box-shadow:var(--sh-md);
+  display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;}
+.hv-float-delay .d{width:8px;height:8px;border-radius:50%;background:var(--maroon);}
+.hv-notif{position:absolute;bottom:-24px;left:-20px;
+  background:var(--white);border:1px solid var(--line);border-radius:var(--r-lg);
+  padding:14px 16px;box-shadow:var(--sh-md);width:270px;}
+.hv-notif .nt{display:flex;align-items:center;gap:9px;margin-bottom:8px;}
+.hv-notif .nt .ic{width:26px;height:26px;border-radius:8px;background:#25D366;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.hv-notif .nt .lbl{font-size:12px;font-weight:700;color:var(--ink-700);}
+.hv-notif .nt .time{font-size:11px;color:var(--slate-400);margin-left:auto;}
+.hv-notif p{font-size:12.5px;color:var(--slate-600);line-height:1.5;}
+.hv-monitor{position:absolute;top:50%;right:-32px;transform:translateY(-50%);
+  background:var(--white);border:1px solid var(--line);border-radius:var(--r-pill);
+  padding:8px 14px;box-shadow:var(--sh-sm);display:flex;align-items:center;
+  gap:7px;font-size:12px;font-weight:600;color:var(--green);}
+.hv-monitor .d{width:7px;height:7px;border-radius:50%;background:var(--green-dot);
+  box-shadow:0 0 0 3px var(--green-bg);}
+
+@media(max-width:1024px){.hv-monitor{display:none;}}
+@media(max-width:900px){
+  .hero-inner{grid-template-columns:1fr;gap:40px;}
+  .hero h1{font-size:40px;}
+  .hv-float-delay{right:0;}
+  .hv-notif{left:0;}
+}
+@media(max-width:480px){.hero h1{font-size:34px;}.hv-stack{width:100%;max-width:340px;}}
+
+/* ══════════════════════════════════════
+   TRUST STRIP
+══════════════════════════════════════ */
+.trust-strip{border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+  background:var(--white);padding:18px 0;}
+.trust-strip .wrap{display:flex;align-items:center;gap:32px;flex-wrap:wrap;justify-content:center;}
+.ts-item{display:flex;align-items:center;gap:9px;font-size:13px;font-weight:600;
+  color:var(--slate-500);}
+.ts-item svg{color:var(--slate-400);}
+.ts-sep{width:1px;height:20px;background:var(--line);}
+
+/* ══════════════════════════════════════
+   HOW IT WORKS
+══════════════════════════════════════ */
+.hiw{padding:90px 0;}
+.hiw .sec-head{text-align:center;margin-bottom:56px;}
+.hiw .sec-head h2{font-size:38px;font-weight:800;letter-spacing:-.03em;}
+.hiw .sec-head p{font-size:17px;color:var(--slate-500);max-width:52ch;
+  margin:14px auto 0;line-height:1.65;}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;position:relative;}
+.steps::before{content:"";position:absolute;top:38px;left:calc(16.66% + 48px);
+  right:calc(16.66% + 48px);height:1.5px;
+  background:repeating-linear-gradient(90deg,var(--o-200) 0,var(--o-200) 6px,transparent 6px,transparent 14px);
+  pointer-events:none;}
+.step{background:var(--white);border:1px solid var(--line);border-radius:var(--r-xl);
+  padding:32px 28px;box-shadow:var(--sh-card);text-align:center;}
+.step-num{width:56px;height:56px;border-radius:50%;background:var(--o-50);
+  border:2px solid var(--o-200);display:flex;align-items:center;justify-content:center;
+  margin:0 auto 20px;font-size:22px;}
+.step h3{font-size:19px;font-weight:700;letter-spacing:-.015em;margin-bottom:10px;}
+.step p{font-size:14px;color:var(--slate-500);line-height:1.65;}
+.step-tag{display:inline-block;margin-top:14px;font-size:12px;font-weight:700;
+  color:var(--brand);letter-spacing:.04em;text-transform:uppercase;}
+@media(max-width:720px){.steps{grid-template-columns:1fr;}.steps::before{display:none;}}
+
+/* ══════════════════════════════════════
+   FLIGHT JOURNEY
+══════════════════════════════════════ */
+.journey{padding:90px 0;background:var(--ink-900);}
+.journey .sec-head{text-align:center;margin-bottom:56px;}
+.journey .sec-head .eyebrow{justify-content:center;color:var(--o-300);}
+.journey .sec-head .eyebrow::before{background:var(--o-300);}
+.journey .sec-head h2{font-size:38px;font-weight:800;letter-spacing:-.03em;color:var(--white);}
+.journey .sec-head p{font-size:16px;color:rgba(255,255,255,.5);max-width:52ch;
+  margin:14px auto 0;line-height:1.65;}
+.jsteps{display:flex;align-items:flex-start;gap:0;position:relative;justify-content:center;}
+.jnode{display:flex;flex-direction:column;align-items:center;gap:14px;
+  cursor:pointer;flex:1;max-width:180px;}
+.jnode .jcirc{width:56px;height:56px;border-radius:50%;
+  border:2px solid rgba(255,255,255,.15);background:rgba(255,255,255,.06);
+  display:flex;align-items:center;justify-content:center;
+  font-size:16px;color:rgba(255,255,255,.4);
+  transition:all .25s ease;position:relative;z-index:1;}
+.jnode:hover .jcirc,.jnode.active .jcirc{
+  border-color:var(--brand);background:rgba(232,89,12,.18);color:var(--white);
+  box-shadow:0 0 0 6px rgba(232,89,12,.12);}
+.jnode.state-green .jcirc{border-color:var(--green-dot);background:rgba(34,197,94,.15);color:var(--green-dot);}
+.jnode.state-amber:hover .jcirc,.jnode.state-amber.active .jcirc{
+  border-color:var(--amber);background:rgba(243,154,11,.18);color:var(--amber);}
+.jnode.state-red:hover .jcirc,.jnode.state-red.active .jcirc{
+  border-color:var(--maroon);background:rgba(176,42,48,.2);color:#FF8589;}
+.jnode.state-teal:hover .jcirc,.jnode.state-teal.active .jcirc{
+  border-color:var(--teal);background:rgba(14,107,134,.2);color:#6DD4EF;}
+.jnode .jlabel{font-size:12.5px;font-weight:700;color:rgba(255,255,255,.4);
+  letter-spacing:.04em;text-align:center;transition:color .2s;}
+.jnode:hover .jlabel,.jnode.active .jlabel{color:rgba(255,255,255,.9);}
+.jline{flex:1;height:1.5px;background:rgba(255,255,255,.12);align-self:center;
+  position:relative;top:-28px;max-width:80px;}
+.jinfo{margin-top:40px;
+  background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);
+  border-radius:var(--r-xl);padding:28px 32px;min-height:130px;
+  transition:all .25s ease;}
+.jinfo h4{font-size:17px;font-weight:700;color:var(--white);margin-bottom:8px;}
+.jinfo p{font-size:14px;color:rgba(255,255,255,.55);line-height:1.65;}
+.jinfo .jchip{display:inline-flex;align-items:center;gap:7px;margin-top:14px;
+  padding:6px 14px;border-radius:var(--r-pill);font-size:12.5px;font-weight:700;}
+.jchip-green{background:rgba(34,197,94,.15);color:var(--green-dot);}
+.jchip-amber{background:rgba(243,154,11,.15);color:var(--amber);}
+.jchip-red{background:rgba(176,42,48,.25);color:#FF8589;}
+.jchip-teal{background:rgba(14,107,134,.25);color:#6DD4EF;}
+.jchip-gray{background:rgba(255,255,255,.08);color:rgba(255,255,255,.5);}
+@media(max-width:768px){.jline{display:none;}.jsteps{flex-wrap:wrap;gap:12px;}
+  .jnode{flex:none;width:calc(33% - 8px);max-width:none;}}
+
+/* ══════════════════════════════════════
+   FEATURES
+══════════════════════════════════════ */
+.features{padding:90px 0;background:var(--paper);}
+.features .sec-head{margin-bottom:48px;}
+.features .sec-head h2{font-size:38px;font-weight:800;letter-spacing:-.03em;}
+.features .sec-head p{font-size:17px;color:var(--slate-500);max-width:50ch;
+  margin-top:12px;line-height:1.65;}
+.feat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;}
+.feat-card{background:var(--white);border:1px solid var(--line);border-radius:var(--r-xl);
+  padding:30px;box-shadow:var(--sh-card);
+  display:grid;grid-template-columns:54px 1fr;gap:20px;align-items:start;}
+.feat-card.wide{grid-column:span 2;grid-template-columns:54px 1fr;}
+.feat-ic{width:54px;height:54px;border-radius:15px;display:flex;align-items:center;
+  justify-content:center;flex-shrink:0;}
+.feat-ic-orange{background:var(--o-50);}
+.feat-ic-green{background:var(--green-bg);}
+.feat-ic-blue{background:var(--blue-bg);}
+.feat-ic-teal{background:var(--teal-bg);}
+.feat-body h3{font-size:18px;font-weight:700;letter-spacing:-.01em;margin-bottom:8px;}
+.feat-body p{font-size:14px;color:var(--slate-500);line-height:1.65;}
+.feat-body .tiers{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;}
+.tier-chip{padding:6px 13px;border-radius:var(--r-pill);font-size:12px;font-weight:700;}
+.tier-t1{background:var(--green-bg);color:var(--green);}
+.tier-t2{background:var(--amber-bg);color:var(--amber);}
+.tier-t3{background:var(--maroon-bg);color:var(--maroon);}
+@media(max-width:720px){.feat-grid{grid-template-columns:1fr;}
+  .feat-card.wide{grid-column:span 1;}.feat-card{grid-template-columns:44px 1fr;}}
+
+/* ══════════════════════════════════════
+   NOTIFICATION PREVIEW
+══════════════════════════════════════ */
+.notif-sec{padding:90px 0;background:var(--white);border-top:1px solid var(--line);}
+.notif-inner{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center;}
+.notif-content h2{font-size:36px;font-weight:800;letter-spacing:-.03em;}
+.notif-content p{font-size:16px;color:var(--slate-500);margin-top:14px;line-height:1.65;max-width:44ch;}
+.channels{display:flex;flex-direction:column;gap:10px;margin-top:28px;}
+.ch-item{display:flex;align-items:center;gap:12px;font-size:14px;font-weight:600;
+  color:var(--ink-700);}
+.ch-ic{width:36px;height:36px;border-radius:10px;display:flex;align-items:center;
+  justify-content:center;flex-shrink:0;}
+.ch-sub{font-size:12.5px;color:var(--slate-400);font-weight:500;margin-top:1px;}
+.phone-mock{background:var(--ink-900);border-radius:var(--r-2xl);padding:16px;
+  box-shadow:var(--sh-lg);max-width:320px;margin:0 auto;}
+.pm-status{height:28px;display:flex;align-items:center;justify-content:space-between;
+  padding:0 6px;margin-bottom:12px;}
+.pm-time{color:rgba(255,255,255,.7);font-size:13px;font-weight:600;}
+.pm-notif{background:rgba(255,255,255,.1);border-radius:16px;padding:14px 16px;margin-bottom:10px;}
+.pm-notif .pm-app{display:flex;align-items:center;gap:8px;margin-bottom:9px;}
+.pm-notif .pm-app-ic{width:22px;height:22px;border-radius:6px;background:#25D366;
+  display:flex;align-items:center;justify-content:center;}
+.pm-notif .pm-app-name{font-size:11px;font-weight:600;color:rgba(255,255,255,.6);}
+.pm-notif .pm-app-time{font-size:10.5px;color:rgba(255,255,255,.35);margin-left:auto;}
+.pm-notif .pm-title{font-size:13px;font-weight:700;color:#fff;margin-bottom:4px;}
+.pm-notif .pm-body{font-size:12px;color:rgba(255,255,255,.6);line-height:1.5;}
+.pm-sms{background:rgba(255,255,255,.07);border-radius:16px;padding:14px 16px;}
+.pm-sms .pm-app-ic{background:var(--teal);}
+@media(max-width:900px){.notif-inner{grid-template-columns:1fr;}}
+
+/* ══════════════════════════════════════
+   FAQ
+══════════════════════════════════════ */
+.faq{padding:90px 0;background:var(--paper);}
+.faq .sec-head{margin-bottom:40px;}
+.faq .sec-head h2{font-size:36px;font-weight:800;letter-spacing:-.03em;}
+.faq-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start;}
+.acc{background:var(--white);border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden;cursor:pointer;}
+.acc .acc-q{display:flex;justify-content:space-between;align-items:center;
+  padding:18px 22px;font-size:15px;font-weight:700;transition:background .15s;user-select:none;}
+.acc:hover .acc-q{background:var(--surface-50);}
+.acc .pm{color:var(--brand);font-size:22px;font-weight:400;line-height:1;flex-shrink:0;
+  transition:transform .25s;margin-left:14px;}
+.acc.open .pm{transform:rotate(45deg);}
+.acc .acc-a{font-size:14px;color:var(--slate-600);line-height:1.7;
+  padding:0 22px;max-height:0;overflow:hidden;transition:max-height .3s ease,padding .3s ease;}
+.acc.open .acc-a{max-height:200px;padding:0 22px 18px;}
+@media(max-width:720px){.faq-grid{grid-template-columns:1fr;}}
+
+/* ══════════════════════════════════════
+   CTA BAND
+══════════════════════════════════════ */
+.cta-band{padding:88px 0;
+  background:linear-gradient(135deg,#F26722 0%,var(--brand) 50%,#C2470A 100%);}
+.cta-band .wrap{text-align:center;}
+.cta-band h2{font-size:44px;font-weight:800;letter-spacing:-.035em;color:#fff;
+  max-width:18ch;margin:0 auto;}
+.cta-band p{font-size:18px;color:rgba(255,255,255,.8);max-width:50ch;
+  margin:16px auto 0;line-height:1.6;}
+.cta-band .btns{display:flex;gap:14px;justify-content:center;margin-top:36px;flex-wrap:wrap;}
+.btn-white{background:#fff;color:var(--brand);border:none;
+  box-shadow:0 6px 20px -6px rgba(0,0,0,.25);}
+.btn-white:hover{background:var(--o-50);}
+.btn-outline-white{background:transparent;color:#fff;border-color:rgba(255,255,255,.5);}
+.btn-outline-white:hover{background:rgba(255,255,255,.12);border-color:#fff;}
+
+/* ══════════════════════════════════════
+   FOOTER
+══════════════════════════════════════ */
+footer{background:var(--ink-900);padding:52px 0 44px;}
+footer .wrap{display:grid;grid-template-columns:1fr 1fr 1fr;gap:40px;}
+.foot-brand .nav-name{color:var(--white);}
+.foot-brand .nav-sub{color:rgba(255,255,255,.4);}
+.foot-brand p{font-size:13px;color:rgba(255,255,255,.35);margin-top:14px;line-height:1.6;max-width:34ch;}
+.foot-col h4{font-size:12px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+  color:rgba(255,255,255,.3);margin-bottom:16px;}
+.foot-col ul{list-style:none;display:flex;flex-direction:column;gap:10px;}
+.foot-col ul li a{color:rgba(255,255,255,.5);text-decoration:none;font-size:13.5px;
+  font-weight:500;transition:color .15s;}
+.foot-col ul li a:hover{color:rgba(255,255,255,.9);}
+.foot-bottom{border-top:1px solid rgba(255,255,255,.07);margin-top:44px;padding-top:24px;
+  display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;}
+.foot-bottom p{font-size:12.5px;color:rgba(255,255,255,.3);}
+.foot-tag{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;
+  color:rgba(255,255,255,.25);padding:6px 12px;border:1px solid rgba(255,255,255,.08);
+  border-radius:var(--r-pill);}
+@media(max-width:720px){footer .wrap{grid-template-columns:1fr;gap:32px;}}
+</style>
+</head>
+<body>
+
+<!-- ══════════ NAV ══════════ -->
+<nav class="topbar">
+  <div class="wrap">
+    <a href="/landing" class="nav-brand">
+      <div class="nav-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17.8 19.2L16 11l3.5-3.5C21 6 21 4 19.5 2.5S18 2 16.5 3.5L13 7 4.8 5.2a.5.5 0 0 0-.5.3l-.9 2.1c-.2.5 0 1 .4 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 4.2c.3.4.8.5 1.3.4l2.1-.9a.5.5 0 0 0 .3-.5Z"/>
+        </svg>
+      </div>
+      <div>
+        <div class="nav-name">TripSecure+</div>
+        <div class="nav-sub">ICICI Lombard · Product 4233</div>
+      </div>
+    </a>
+    <div class="nav-links">
+      <a href="#how">How it works</a>
+      <a href="#features">Features</a>
+      <a href="#faq">FAQ</a>
+      <a href="/live">Multi-vendor</a>
+    </div>
+    <a href="/" class="btn btn-primary" style="font-size:13.5px;padding:10px 18px;">Try the demo →</a>
+  </div>
+</nav>
+
+<!-- ══════════ HERO ══════════ -->
+<section class="hero">
+  <div class="wrap">
+    <div class="hero-inner">
+      <div>
+        <div class="hero-badge-row reveal">
+          <span class="hbadge hbadge-maroon">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            ICICI Lombard
+          </span>
+          <span class="hbadge hbadge-green">
+            <span class="dot"></span>Live monitoring
+          </span>
+        </div>
+        <h1 class="reveal reveal-delay-1">Your flight changed. <em>You already know.</em></h1>
+        <p class="hero-sub reveal reveal-delay-2">TripSecure+ watches every insured flight around the clock and sends an instant WhatsApp alert the moment your delay crosses a threshold — no app, no refresh, no waiting.</p>
+        <div class="hero-ctas reveal reveal-delay-3">
+          <a href="/" class="btn btn-primary btn-lg">Try the demo</a>
+          <a href="#how" class="btn btn-ghost btn-lg">How it works ↓</a>
+        </div>
+        <div class="trust-row reveal reveal-delay-4">
+          <span class="trust-chip">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            WhatsApp + SMS + Email
+          </span>
+          <span class="trust-chip">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            DPDP Act §6 compliant
+          </span>
+          <span class="trust-chip">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            Activate in 30 seconds
+          </span>
+        </div>
+      </div>
+
+      <div class="hero-visual reveal reveal-delay-2">
+        <div class="hv-stack">
+          <!-- Floating delay badge -->
+          <div class="hv-float-delay">
+            <span class="d"></span>DELAYED T3 · +150 min
+          </div>
+          <!-- Main flight card -->
+          <div class="hv-card">
+            <div class="hv-card-top">
+              <span class="hv-logo">TripSecure+</span>
+              <span class="st-badge st-green">
+                <svg width="7" height="7" viewBox="0 0 8 8"><circle cx="4" cy="4" r="4" fill="currentColor"/></svg>Active
+              </span>
+            </div>
+            <div class="hv-route">
+              <span class="hv-iata">BOM</span>
+              <span class="hv-line">
+                <span class="hv-plane">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21 4 19.5 2.5S18 2 16.5 3.5L13 7 4.8 5.2a.5.5 0 0 0-.5.3l-.9 2.1c-.2.5 0 1 .4 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 4.2c.3.4.8.5 1.3.4l2.1-.9a.5.5 0 0 0 .3-.5Z"/></svg>
+                </span>
+              </span>
+              <span class="hv-iata">DEL</span>
+            </div>
+            <div class="hv-meta">
+              <span>AI 302 · 5 Jun 2026</span>
+              <span>Dep 09:00 UTC</span>
+            </div>
+            <div class="hv-divider"></div>
+            <div class="hv-pax">
+              <div class="av">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6" stroke-linecap="round"/></svg>
+              </div>
+              <div>
+                <div class="name">Rajat Sharma</div>
+                <div class="pnr">PNR: ASDAS</div>
+              </div>
+              <div style="margin-left:auto;">
+                <span class="st-badge st-red" style="font-size:11px;padding:4px 9px;">● T3</span>
+              </div>
+            </div>
+          </div>
+          <!-- Floating notification -->
+          <div class="hv-notif">
+            <div class="nt">
+              <div class="ic">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="white" stroke="none"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
+              </div>
+              <span class="lbl">WhatsApp · TripSecure+</span>
+              <span class="time">11:01 am</span>
+            </div>
+            <p>Important update: your flight AI302 is significantly delayed by 150 minutes. We'll notify you of any further changes.</p>
+          </div>
+          <!-- Live monitoring chip -->
+          <div class="hv-monitor"><span class="d"></span>Monitoring active</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ TRUST STRIP ══════════ -->
+<div class="trust-strip">
+  <div class="wrap">
+    <div class="ts-item">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      ICICI Lombard General Insurance
+    </div>
+    <div class="ts-sep"></div>
+    <div class="ts-item">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+      Real-time via FlightAware AeroAPI
+    </div>
+    <div class="ts-sep"></div>
+    <div class="ts-item">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      Alerts via Twilio WhatsApp & SMS
+    </div>
+    <div class="ts-sep"></div>
+    <div class="ts-item">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      DPDP Act §6 compliant
+    </div>
+    <div class="ts-sep"></div>
+    <div class="ts-item">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      Monitoring only — no money moved
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ HOW IT WORKS ══════════ -->
+<section class="hiw" id="how">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="eyebrow" style="justify-content:center;">How it works</div>
+      <h2>Up and running in under a minute</h2>
+      <p>No app to download, no policy portal to navigate. Just a PNR, a phone number, and we'll handle the rest.</p>
+    </div>
+    <div class="steps">
+      <div class="step reveal reveal-delay-1">
+        <div class="step-num">✈️</div>
+        <h3>Enroll your flight</h3>
+        <p>Enter your PNR, flight number, travel date, and mobile number. Takes 30 seconds. One-time consent for DPDP compliance.</p>
+        <span class="step-tag">30 seconds</span>
+      </div>
+      <div class="step reveal reveal-delay-2">
+        <div class="step-num">🔍</div>
+        <h3>We monitor 24 / 7</h3>
+        <p>Our system pings live AeroAPI data continuously, running every update through a smart state machine that filters out noise.</p>
+        <span class="step-tag">Fully automated</span>
+      </div>
+      <div class="step reveal reveal-delay-3">
+        <div class="step-num">🔔</div>
+        <h3>Instant alert, every time</h3>
+        <p>The moment your flight crosses a delay threshold or a material status changes, you receive a WhatsApp message — before you check the board.</p>
+        <span class="step-tag">WhatsApp · SMS · Email</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ FLIGHT JOURNEY ══════════ -->
+<section class="journey" id="journey">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="eyebrow">Flight status states</div>
+      <h2>A smart state machine, not a firehose</h2>
+      <p>We only notify on meaningful transitions — never on every radar ping. Hover each state to see exactly when you get an alert.</p>
+    </div>
+    <div class="jsteps reveal" id="jsteps">
+      <div class="jnode state-green active" data-info="registered">
+        <div class="jcirc">●</div>
+        <div class="jlabel">Registered</div>
+      </div>
+      <div class="jline"></div>
+      <div class="jnode" data-info="ontime">
+        <div class="jcirc">✓</div>
+        <div class="jlabel">On&nbsp;Time</div>
+      </div>
+      <div class="jline"></div>
+      <div class="jnode state-amber" data-info="delayed_t1">
+        <div class="jcirc">!</div>
+        <div class="jlabel">Delayed&nbsp;T1</div>
+      </div>
+      <div class="jline"></div>
+      <div class="jnode state-red" data-info="delayed_t3">
+        <div class="jcirc">!!</div>
+        <div class="jlabel">Delayed&nbsp;T3</div>
+      </div>
+      <div class="jline"></div>
+      <div class="jnode state-teal" data-info="departed">
+        <div class="jcirc">↑</div>
+        <div class="jlabel">Departed</div>
+      </div>
+      <div class="jline"></div>
+      <div class="jnode state-teal" data-info="landed">
+        <div class="jcirc">✓</div>
+        <div class="jlabel">Landed</div>
+      </div>
+    </div>
+    <div class="jinfo reveal" id="jinfo">
+      <h4 id="jinfo-title">Registered</h4>
+      <p id="jinfo-body">Your flight is enrolled. We've taken a baseline snapshot of the schedule and registered it for continuous monitoring. No notification yet — we're just watching.</p>
+      <span class="jchip jchip-gray" id="jinfo-chip">No alert sent</span>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ FEATURES ══════════ -->
+<section class="features" id="features">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="eyebrow">Features</div>
+      <h2>Built with the right guardrails</h2>
+      <p>Every design decision in TripSecure+ exists for a reason — no magic numbers, no data slop, no unnecessary noise.</p>
+    </div>
+    <div class="feat-grid">
+      <div class="feat-card reveal reveal-delay-1">
+        <div class="feat-ic feat-ic-orange">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#E8590C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        </div>
+        <div class="feat-body">
+          <h3>Three configurable delay tiers</h3>
+          <p>Thresholds aren't hardcoded. T1, T2, T3 — and the backstop close window — are all config values. We only alert on tier crossings, not on every ping.</p>
+          <div class="tiers">
+            <span class="tier-chip tier-t1">T1 · 30 min</span>
+            <span class="tier-chip tier-t2">T2 · 60 min</span>
+            <span class="tier-chip tier-t3">T3 · 120 min</span>
+          </div>
+        </div>
+      </div>
+      <div class="feat-card reveal reveal-delay-2">
+        <div class="feat-ic feat-ic-green">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#16A34A" stroke-width="2" stroke-linecap="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        </div>
+        <div class="feat-body">
+          <h3>Multi-channel instant alerts</h3>
+          <p>WhatsApp via Twilio, SMS fallback, and email via SendGrid — all triggered simultaneously on a notifiable transition, with full idempotency.</p>
+        </div>
+      </div>
+      <div class="feat-card reveal reveal-delay-3">
+        <div class="feat-ic feat-ic-blue">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3B7DFF" stroke-width="2" stroke-linecap="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        </div>
+        <div class="feat-body">
+          <h3>PII isolation by design</h3>
+          <p>Only the <code style="font-size:12.5px;background:var(--surface-100);padding:2px 6px;border-radius:4px;">policy_pii</code> table holds name, phone, and email. Every other table and log references only the anonymised policy ID — DPDP §6 compliant from day one.</p>
+        </div>
+      </div>
+      <div class="feat-card reveal reveal-delay-4">
+        <div class="feat-ic feat-ic-teal">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#0E6B86" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        </div>
+        <div class="feat-body">
+          <h3>Vendor-agnostic brain</h3>
+          <p>The decision engine is pure Python — no SDK, DB, or httpx inside. Swap FlightAware for any other data feed and the brain behaves identically. Future-proof by design.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ NOTIFICATION PREVIEW ══════════ -->
+<section class="notif-sec">
+  <div class="wrap">
+    <div class="notif-inner">
+      <div class="reveal">
+        <div class="eyebrow" style="margin-bottom:18px;">Notifications</div>
+        <h2 class="notif-content" style="font-size:36px;font-weight:800;letter-spacing:-.03em;">Alerts that feel human, not robotic</h2>
+        <p style="font-size:16px;color:var(--slate-500);margin-top:14px;line-height:1.65;max-width:44ch;">Plain-language messages on the channels your customers already use. No jargon, no PDFs, just the information they need right now.</p>
+        <div class="channels">
+          <div class="ch-item">
+            <div class="ch-ic" style="background:#25D36618;color:#25D366;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 0 0-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
+            </div>
+            <div><div>WhatsApp</div><div class="ch-sub">Primary — fastest delivery, rich preview</div></div>
+          </div>
+          <div class="ch-item">
+            <div class="ch-ic" style="background:var(--teal-bg);color:var(--teal);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            </div>
+            <div><div>SMS</div><div class="ch-sub">Fallback — works on any handset, no data needed</div></div>
+          </div>
+          <div class="ch-item">
+            <div class="ch-ic" style="background:var(--blue-bg);color:var(--blue);">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            </div>
+            <div><div>Email</div><div class="ch-sub">Optional — full message + policy details</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="reveal reveal-delay-2">
+        <div class="phone-mock">
+          <div class="pm-status">
+            <span class="pm-time">11:01</span>
+            <div style="display:flex;gap:5px;align-items:center;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="rgba(255,255,255,.6)"><path d="M1 6l5.5 6L12 6l5.5 6L23 6"/></svg>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.6)" stroke-width="2"><path d="M5 12.55a11 11 0 0 1 14.08 0M1.42 9a16 16 0 0 1 21.16 0M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01"/></svg>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="rgba(255,255,255,.6)"><rect x="2" y="7" width="20" height="11" rx="2"/><path d="M22 11h2v4h-2z"/></svg>
+            </div>
+          </div>
+          <div class="pm-notif">
+            <div class="pm-app">
+              <div class="pm-app-ic">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.181-.013-.371-.013-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 0 1-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 0 1-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 0 1 2.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0 0 12.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 0 0 5.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 0 0-3.48-8.413Z"/></svg>
+              </div>
+              <span class="pm-app-name">TripSecure+ · WhatsApp</span>
+              <span class="pm-app-time">now</span>
+            </div>
+            <div class="pm-title">Flight AI302 — Delayed T3 🔔</div>
+            <div class="pm-body">Important update: your flight AI302 is significantly delayed by 150 minutes. We'll notify you of any further changes.<br/><br/>Rajat · +91 73••••99</div>
+          </div>
+          <div class="pm-sms" style="margin-top:10px;">
+            <div class="pm-app">
+              <div class="pm-app-ic" style="background:var(--teal);">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+              </div>
+              <span class="pm-app-name">SMS · TripSecure+</span>
+              <span class="pm-app-time">11:01 am</span>
+            </div>
+            <div class="pm-title" style="font-size:12px;">Flight AI302 delayed +150 min</div>
+            <div class="pm-body">TripSecure+: AI302 delayed 150 min. Further updates incoming. ICICI Lombard Product 4233.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ FAQ ══════════ -->
+<section class="faq" id="faq">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <div class="eyebrow">FAQ</div>
+      <h2>Common questions</h2>
+    </div>
+    <div class="faq-grid reveal reveal-delay-1">
+      <div>
+        <div class="acc" onclick="toggleAcc(this)">
+          <div class="acc-q">Which flights are eligible?<span class="pm">+</span></div>
+          <div class="acc-a">Any flight enrolled under ICICI Lombard Product 4233 (TripSecure+). You'll need the PNR and flight number from your booking confirmation.</div>
+        </div>
+        <div class="acc" style="margin-top:12px;" onclick="toggleAcc(this)">
+          <div class="acc-q">When exactly do I get notified?<span class="pm">+</span></div>
+          <div class="acc-a">At three thresholds: T1 (30 min delay), T2 (60 min), T3 (120 min). Also on recovery (back to on-time), departure with a new ETA, landing, cancellation, and diversion. Never on every radar ping — only on meaningful state changes.</div>
+        </div>
+        <div class="acc" style="margin-top:12px;" onclick="toggleAcc(this)">
+          <div class="acc-q">What does TripSecure+ do when my flight is delayed?<span class="pm">+</span></div>
+          <div class="acc-a">It sends an instant WhatsApp, SMS, and email the moment your delay crosses a threshold — and again on departure and landing. TripSecure+ is a monitoring and notification service only; anything beyond alerts is handled separately by ICICI Lombard.</div>
+        </div>
+      </div>
+      <div>
+        <div class="acc" onclick="toggleAcc(this)">
+          <div class="acc-q">Is my personal data safe?<span class="pm">+</span></div>
+          <div class="acc-a">Yes. Your name, phone, and email are stored in an isolated PII table. All flight tracking and decision logs reference only your anonymised policy ID — fully DPDP Act §6 compliant. Data is used only for flight monitoring.</div>
+        </div>
+        <div class="acc" style="margin-top:12px;" onclick="toggleAcc(this)">
+          <div class="acc-q">What if my flight is cancelled or diverted?<span class="pm">+</span></div>
+          <div class="acc-a">You'll be notified immediately when the state changes to CANCELLED or DIVERTED. Monitoring continues until the flight reaches a terminal state or the 24-hour backstop closes the record.</div>
+        </div>
+        <div class="acc" style="margin-top:12px;" onclick="toggleAcc(this)">
+          <div class="acc-q">What if I miss the WhatsApp message?<span class="pm">+</span></div>
+          <div class="acc-a">We send notifications via WhatsApp, SMS, and optionally email simultaneously. If one channel fails we retry. You can also log back into the demo portal to see the full event timeline at any time.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ CTA BAND ══════════ -->
+<section class="cta-band">
+  <div class="wrap">
+    <h2 class="reveal">Know before your flight does.</h2>
+    <p class="reveal reveal-delay-1">Enroll any TripSecure+ flight in 30 seconds and we'll keep you ahead of every delay, departure, and landing — automatically.</p>
+    <div class="btns reveal reveal-delay-2">
+      <a href="/" class="btn btn-white btn-lg">Try the live demo →</a>
+      <a href="#how" class="btn btn-outline-white btn-lg">How it works</a>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════ FOOTER ══════════ -->
+<footer>
+  <div class="wrap">
+    <div class="foot-brand">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+        <div class="nav-icon" style="background:rgba(255,255,255,.1);flex-shrink:0;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21 4 19.5 2.5S18 2 16.5 3.5L13 7 4.8 5.2a.5.5 0 0 0-.5.3l-.9 2.1c-.2.5 0 1 .4 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 4.2c.3.4.8.5 1.3.4l2.1-.9a.5.5 0 0 0 .3-.5Z"/></svg>
+        </div>
+        <div>
+          <div class="nav-name" style="color:#fff;font-size:16px;">TripSecure+</div>
+          <div class="nav-sub" style="color:rgba(255,255,255,.35);">ICICI Lombard · Product 4233</div>
+        </div>
+      </div>
+      <p>Flight delay monitoring and notification service — Phase 1. Monitoring and alerts only; no money is moved. DPDP Act §6 compliant.</p>
+    </div>
+    <div class="foot-col">
+      <h4>Product</h4>
+      <ul>
+        <li><a href="#how">How it works</a></li>
+        <li><a href="#features">Features</a></li>
+        <li><a href="#journey">Flight states</a></li>
+        <li><a href="/">Decision-brain simulator</a></li>
+        <li><a href="/live">Multi-vendor status</a></li>
+      </ul>
+    </div>
+    <div class="foot-col">
+      <h4>Legal &amp; data</h4>
+      <ul>
+        <li><a href="#">DPDP Act §6 consent</a></li>
+        <li><a href="#">Data retention policy</a></li>
+        <li><a href="#">PII isolation</a></li>
+        <li><a href="#">ICICI Lombard terms</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="wrap">
+    <div class="foot-bottom">
+      <p>© 2026 ICICI Lombard General Insurance Co. Ltd. · TripSecure+ is a registered product.</p>
+      <span class="foot-tag">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        Monitoring only · Phase 1
+      </span>
+    </div>
+  </div>
+</footer>
+
+<script>
+/* ── Accordion ── */
+function toggleAcc(el){
+  const wasOpen = el.classList.contains('open');
+  document.querySelectorAll('.acc.open').forEach(a => a.classList.remove('open'));
+  if(!wasOpen) el.classList.add('open');
+}
+
+/* ── Flight journey interactive ── */
+const jData = {
+  registered: {
+    title:"Registered",
+    body:"Your flight is enrolled. We have taken a baseline snapshot and registered it for continuous monitoring. No notification yet — we are just watching.",
+    chip:"No alert sent", chipClass:"jchip-gray"
+  },
+  ontime:{
+    title:"On Time",
+    body:"The flight is tracking on schedule. Customers are notified once that monitoring is active. After that, no noise until something material changes.",
+    chip:"\u2713 Monitoring active sent", chipClass:"jchip-green"
+  },
+  delayed_t1:{
+    title:"Delayed \u2014 Tier 1 (30 min)",
+    body:"First threshold crossed. Customer gets an immediate WhatsApp + SMS + email: your flight is delayed by approximately 30 minutes.",
+    chip:"\uD83D\uDD14 Tier 1 alert sent", chipClass:"jchip-amber"
+  },
+  delayed_t3:{
+    title:"Delayed \u2014 Tier 3 (120+ min)",
+    body:"Significant delay. Customer is notified again only because the tier crossed — no spam for incremental changes within a tier. Most severe alert level before cancellation.",
+    chip:"\uD83D\uDEA8 Tier 3 alert sent", chipClass:"jchip-red"
+  },
+  departed:{
+    title:"Departed",
+    body:"The flight has pushed back and is airborne with a new ETA. Customer is notified with the updated arrival time so they can adjust plans.",
+    chip:"\u2708 Your flight has departed — sent", chipClass:"jchip-teal"
+  },
+  landed:{
+    title:"Landed",
+    body:"Flight has touched down. Monitoring ends. Record is closed. Customer gets a final confirmation — journey complete. No further alerts.",
+    chip:"\uD83D\uDFE2 Your flight has landed — sent", chipClass:"jchip-teal"
+  }
+};
+
+document.querySelectorAll('.jnode').forEach(node => {
+  node.addEventListener('mouseenter', () => showInfo(node.dataset.info));
+  node.addEventListener('click', () => showInfo(node.dataset.info));
+});
+
+function showInfo(key){
+  const d = jData[key]; if(!d) return;
+  document.querySelectorAll('.jnode').forEach(n => n.classList.remove('active'));
+  document.querySelector(`[data-info="${key}"]`)?.classList.add('active');
+  document.getElementById('jinfo-title').textContent = d.title;
+  document.getElementById('jinfo-body').textContent = d.body;
+  const chip = document.getElementById('jinfo-chip');
+  chip.textContent = d.chip;
+  chip.className = 'jchip ' + d.chipClass;
+}
+
+/* ── Scroll reveal ── */
+const ro = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{ if(e.isIntersecting) e.target.classList.add('visible'); });
+}, {threshold:0.08, rootMargin:'0px 0px -40px 0px'});
+document.querySelectorAll('.reveal').forEach(el=>{
+  // Immediately show elements already in the viewport
+  const r = el.getBoundingClientRect();
+  if(r.top < window.innerHeight && r.bottom > 0){
+    el.classList.add('visible');
+  } else {
+    ro.observe(el);
+  }
+});
+</script>
+</body>
+</html>

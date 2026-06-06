@@ -25,6 +25,8 @@ def test_page_has_key_elements(monkeypatch):
     html = client.get("/").text
     for marker in ['id="issue-form"', 'id="dashboard"', 'id="stepper"',
                    'id="sim-controls"', 'id="timeline"', 'id="notifications"',
-                   'id="payload-console"', 'Space Grotesk', '#B02A30',
-                   'gsap.min.js', 'prefers-reduced-motion']:
+                   'id="payload-console"', 'id="input-consent"',
+                   'Plus Jakarta Sans', '#B02A30', 'prefers-reduced-motion',
+                   # wired to the REAL endpoints (no in-page mock brain)
+                   '/policies', '/demo/simulate']:
         assert marker in html, f"missing {marker}"

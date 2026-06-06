@@ -1,217 +1,573 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TripSecure+ — Live Flight Status (Multi-vendor)</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = { theme: { extend: { colors: {
-      primary: '#B02A30', secondary: '#E8740C', tertiary: '#0E6B86',
-      success: '#15803D', ink: '#1F2937', muted: '#64748B', canvas: '#F4F5F7', line: '#E5E7EB',
-    } } } };
-  </script>
-  <style>
-    body { background:#F4F5F7; color:#1F2937; }
-    .card { background:#fff; border:1px solid #E5E7EB; border-radius:12px; }
-    .inp { width:100%; border:1px solid #D7DCE2; border-radius:8px; padding:9px 12px; font-size:14px; outline:none; }
-    .inp:focus { border-color:#B02A30; box-shadow:0 0 0 3px rgba(176,42,48,.12); }
-    .btn { background:#B02A30; color:#fff; border:none; border-radius:8px; padding:10px 16px; font-weight:600; cursor:pointer; }
-    .btn:hover { background:#8A1F24; } .btn:disabled { opacity:.6; cursor:not-allowed; }
-    .badge { display:inline-flex; align-items:center; gap:6px; padding:4px 12px; border-radius:999px; font-size:12px; font-weight:600; }
-    .try { font-size:12px; border:1px solid #E5E7EB; background:#fff; border-radius:8px; padding:6px 10px; cursor:pointer; }
-    .try:hover { background:#F8FAFC; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Multi-vendor Status — TripSecure+ · ICICI Lombard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --brand:#E8590C; --brand-bright:#F26722; --brand-dark:#C2470A;
+  --o-50:#FFF5EE; --o-100:#FFE7D6; --o-200:#FFC9A6;
+  --maroon:#B02A30; --maroon-bg:#FDF1F1;
+  --teal:#0E6B86; --teal-bg:#E7F4F8;
+  --ink-900:#16171C; --ink-700:#33363E;
+  --slate-600:#565B66; --slate-500:#6E7480; --slate-400:#9AA0AB;
+  --line:#ECEDF1; --line-strong:#E0E2E8;
+  --surface-100:#F3F4F7; --surface-50:#FAFAFB;
+  --paper:#FBFAF8; --white:#FFFFFF;
+  --blue:#3B7DFF; --blue-bg:#EAF1FF;
+  --green:#16A34A; --green-dot:#22C55E; --green-bg:#E4F7EC;
+  --amber:#F39A0B; --amber-ink:#B9740A; --amber-bg:#FFF4DF;
+  --grad-policy:linear-gradient(135deg,#EEF1FF 0%,#F4F1FF 48%,#FCF3EF 100%);
+  --r-md:12px; --r-lg:16px; --r-xl:22px; --r-2xl:28px; --r-pill:999px;
+  --sh-card:0 2px 14px rgba(20,22,28,.05);
+  --sh-md:0 8px 26px -8px rgba(20,22,28,.12);
+  --sh-lg:0 22px 50px -18px rgba(20,22,28,.22);
+  --font:'Plus Jakarta Sans',system-ui,sans-serif;
+  --mono:ui-monospace,'SF Mono',Menlo,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font);background:var(--paper);color:var(--ink-900);-webkit-font-smoothing:antialiased;line-height:1.5;}
+.wrap{max-width:1200px;margin:0 auto;padding:0 44px;}
+@media(max-width:768px){.wrap{padding:0 20px;}}
+
+/* Nav */
+.topbar{position:sticky;top:0;z-index:50;background:rgba(251,250,248,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line);}
+.topbar .wrap{display:flex;align-items:center;justify-content:space-between;height:64px;gap:24px;}
+.nav-brand{display:flex;align-items:center;gap:16px;text-decoration:none;}
+.nav-logo{height:34px;width:auto;display:block;flex-shrink:0;}
+.nav-divider{width:1px;height:22px;background:var(--line-strong);flex-shrink:0;}
+.nav-client{font-size:11px;font-weight:700;color:var(--slate-400);letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;line-height:1.3;}
+.nav-client span{display:block;font-size:10px;font-weight:600;color:var(--slate-400);letter-spacing:.04em;margin-top:1px;}
+.nav-pages{display:flex;gap:4px;}
+.nav-pg{color:var(--slate-600);text-decoration:none;font-size:14px;font-weight:600;padding:7px 14px;border-radius:var(--r-lg);transition:all .15s;}
+.nav-pg:hover{background:var(--surface-100);color:var(--ink-900);}
+.nav-pg.active{background:var(--o-50);color:var(--brand);}
+@media(max-width:560px){.nav-sub{display:none;}.nav-pg{padding:6px 10px;font-size:13px;}}
+
+/* Intro */
+.intro{padding:56px 0 40px;border-bottom:1px solid var(--line);}
+.eyebrow{font-size:11.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--brand);display:flex;align-items:center;gap:9px;margin-bottom:14px;}
+.eyebrow::before{content:'';width:16px;height:2px;background:var(--brand);border-radius:2px;}
+.intro h1{font-size:40px;font-weight:800;letter-spacing:-.04em;line-height:1.06;max-width:20ch;}
+.intro p{font-size:16.5px;color:var(--slate-500);margin-top:14px;max-width:58ch;line-height:1.65;text-wrap:pretty;}
+@media(max-width:640px){.intro h1{font-size:28px;}}
+
+/* Lookup bar */
+.lookup-bar{background:var(--white);border-bottom:1px solid var(--line);padding:20px 0;}
+.live-form{display:grid;grid-template-columns:1.1fr .9fr .9fr auto;gap:12px;align-items:end;}
+@media(max-width:760px){.live-form{grid-template-columns:1fr 1fr;}}
+.lf-group{display:flex;flex-direction:column;gap:4px;}
+.lf-label{font-size:10px;font-weight:700;color:var(--slate-400);letter-spacing:.07em;text-transform:uppercase;}
+.lf-input{font-family:var(--font);font-size:14.5px;font-weight:600;color:var(--ink-900);background:var(--surface-50);border:1.5px solid var(--line-strong);border-radius:11px;padding:10px 13px;outline:none;transition:border-color .15s,box-shadow .15s;}
+.lf-input:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(232,89,12,.12);}
+.lf-input.lf-code{text-transform:uppercase;}
+.live-actions{display:flex;gap:8px;}
+.lf-btn{padding:0 22px;height:43px;background:var(--ink-900);color:var(--white);font-family:var(--font);font-size:13.5px;font-weight:700;border:none;border-radius:11px;cursor:pointer;transition:background .15s;white-space:nowrap;}
+.lf-btn:hover{background:var(--brand);}
+.lf-btn.ghost{background:var(--white);color:var(--slate-600);border:1.5px solid var(--line-strong);}
+.lf-btn.ghost:hover{background:var(--surface-100);color:var(--ink-900);}
+.lookup-note{font-size:12px;color:var(--slate-400);margin-top:11px;min-height:18px;}
+.lookup-note.ok{color:var(--teal);}
+.lookup-note.err{color:var(--maroon);}
+
+/* Section scaffolding */
+.sec{padding:34px 0;}
+.sec-eyebrow{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--slate-400);margin-bottom:8px;display:flex;align-items:center;gap:10px;}
+.sec h2{font-size:22px;font-weight:800;letter-spacing:-.03em;}
+.sec h2 + p{font-size:14px;color:var(--slate-500);margin-top:6px;max-width:62ch;line-height:1.6;}
+.pill-illus{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--amber-ink);background:var(--amber-bg);border:1px solid rgba(243,154,11,.3);border-radius:var(--r-pill);padding:3px 10px;}
+.pill-live{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--teal);background:var(--teal-bg);border:1px solid rgba(14,107,134,.3);border-radius:var(--r-pill);padding:3px 10px;}
+
+/* Scenario tabs */
+.scen-tabs{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0 22px;}
+.stab{padding:9px 18px;border-radius:var(--r-pill);font-size:13px;font-weight:700;cursor:pointer;border:1.5px solid var(--line);background:var(--white);color:var(--slate-500);transition:all .2s;}
+.stab:hover{border-color:var(--line-strong);color:var(--ink-700);}
+.stab.active{background:var(--ink-900);color:var(--white);border-color:var(--ink-900);}
+.scen-desc{font-size:14px;color:var(--slate-500);max-width:64ch;line-height:1.6;margin-bottom:22px;min-height:2.2em;}
+
+/* MV panel (feeds + verdict) */
+.mv-panel{display:grid;grid-template-columns:1fr 1.4fr;gap:20px;align-items:start;}
+@media(max-width:900px){.mv-panel{grid-template-columns:1fr;}}
+.mv-feeds{display:flex;flex-direction:column;gap:14px;}
+.vendor-card{background:var(--white);border:1px solid var(--line);border-radius:var(--r-xl);overflow:hidden;box-shadow:var(--sh-card);}
+.vc-head{padding:14px 18px 12px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);gap:10px;}
+.vc-vendor{display:flex;align-items:center;gap:8px;}
+.vc-icon{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;flex-shrink:0;}
+.vc-name{font-size:13px;font-weight:700;color:var(--ink-900);}
+.vc-name small{display:block;font-size:10.5px;font-weight:500;color:var(--slate-400);}
+.vc-updated{font-size:11px;font-weight:600;color:var(--slate-400);font-family:var(--mono);white-space:nowrap;}
+.vc-updated.stale{color:var(--amber-ink);}
+.vc-body{padding:16px 18px;}
+.vc-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:var(--r-pill);font-size:12px;font-weight:700;border:1px solid transparent;margin-bottom:14px;}
+.vc-rows{display:flex;flex-direction:column;gap:7px;}
+.vc-row{display:flex;justify-content:space-between;align-items:baseline;gap:8px;}
+.vc-rowlabel{font-size:12px;color:var(--slate-400);font-weight:500;}
+.vc-rowval{font-size:12.5px;font-weight:700;color:var(--ink-700);font-family:var(--mono);text-align:right;}
+.vc-rowval.highlight{color:var(--brand);}
+.vc-rowval.muted{color:var(--slate-400);}
+.vc-rowval.fresh{color:var(--green);}
+.vc-err{font-size:12.5px;color:var(--maroon);font-weight:600;line-height:1.5;}
+
+/* Verdict card */
+.verdict-card{background:var(--white);border:1px solid var(--line);border-radius:var(--r-xl);overflow:hidden;box-shadow:var(--sh-md);position:relative;}
+.verdict-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--brand);}
+.vc-verdict-head{padding:20px 22px 16px;border-bottom:1px solid var(--line);}
+.verdict-eyebrow{display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap;}
+.code-tag{font-size:11px;font-weight:700;font-family:var(--mono);padding:3px 9px;border-radius:5px;background:var(--surface-100);color:var(--slate-500);border:1px solid var(--line);}
+.agree-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:var(--r-pill);font-size:11px;font-weight:700;}
+.agree-badge.agree{background:var(--green-bg);color:var(--green);border:1px solid rgba(22,163,74,.2);}
+.agree-badge.differ{background:var(--amber-bg);color:var(--amber-ink);border:1px solid rgba(243,154,11,.25);}
+.agree-badge.mismatch{background:var(--maroon-bg);color:var(--maroon);border:1px solid rgba(176,42,48,.25);}
+.verdict-state{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:var(--r-pill);font-size:14px;font-weight:800;border:1px solid transparent;letter-spacing:-.01em;}
+.verdict-state .vsdot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.vc-verdict-body{padding:18px 22px;}
+.verdict-rows{display:flex;flex-direction:column;gap:9px;margin-bottom:18px;}
+.verdict-row{display:flex;justify-content:space-between;align-items:baseline;gap:8px;}
+.vrlabel{font-size:12.5px;color:var(--slate-500);font-weight:500;}
+.vrval{font-size:13px;font-weight:700;color:var(--ink-700);font-family:var(--mono);text-align:right;}
+.vrval.key{color:var(--ink-900);font-size:14px;}
+.brain-box{background:var(--surface-100);border-radius:var(--r-lg);padding:14px 16px;margin-bottom:16px;}
+.brain-box-label{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--slate-400);margin-bottom:6px;}
+.brain-decision{font-size:13.5px;font-weight:700;color:var(--ink-900);line-height:1.5;}
+.brain-note{font-size:12px;color:var(--slate-500);margin-top:4px;line-height:1.55;}
+.msg-preview{background:var(--ink-900);border-radius:var(--r-lg);padding:14px 16px;}
+.mp-head{display:flex;align-items:center;gap:8px;margin-bottom:10px;}
+.mp-ic{width:24px;height:24px;border-radius:6px;background:#25D366;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.mp-name{font-size:11.5px;font-weight:700;color:rgba(255,255,255,.7);}
+.mp-body{font-size:12.5px;color:rgba(255,255,255,.75);line-height:1.55;}
+.no-notify{display:flex;align-items:center;gap:9px;padding:12px 14px;background:var(--surface-100);border-radius:var(--r-lg);font-size:12.5px;color:var(--slate-500);font-weight:600;line-height:1.5;}
+.readonly-note{font-size:11px;color:var(--slate-400);margin-top:12px;}
+
+/* Edge cases */
+.edge-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px;}
+@media(max-width:640px){.edge-grid{grid-template-columns:1fr;}}
+.edge-card{border:1px solid var(--line);border-radius:var(--r-lg);padding:16px;background:var(--white);}
+.edge-card .et{font-weight:700;font-size:13.5px;}
+.edge-card p{color:var(--slate-500);font-size:12.5px;margin:6px 0 12px;line-height:1.55;}
+.edge-card code{font-family:var(--mono);font-size:11.5px;background:var(--surface-100);padding:1px 5px;border-radius:4px;color:var(--teal);}
+.try{font-size:12px;font-weight:700;border:1.5px solid var(--line-strong);background:var(--white);border-radius:9px;padding:7px 13px;cursor:pointer;color:var(--ink-700);transition:all .15s;}
+.try:hover{background:var(--surface-100);border-color:var(--brand);color:var(--brand);}
+
+/* Rules */
+.rules-sec{padding:56px 0;background:var(--white);border-top:1px solid var(--line);}
+.rules-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:28px;}
+@media(max-width:720px){.rules-grid{grid-template-columns:1fr;}}
+.rule-card{background:var(--paper);border:1px solid var(--line);border-radius:var(--r-xl);padding:22px;}
+.rule-ic{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;}
+.rule-card h3{font-size:15px;font-weight:700;letter-spacing:-.01em;margin-bottom:8px;}
+.rule-card p{font-size:13px;color:var(--slate-500);line-height:1.6;}
+.rule-card code{font-family:var(--mono);font-size:11.5px;background:var(--surface-100);padding:2px 6px;border-radius:4px;color:var(--ink-700);}
+
+/* Callout */
+.callout{padding:72px 0;background:var(--ink-900);}
+.callout .wrap{text-align:center;max-width:760px;}
+.callout-eyebrow{font-size:11.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.35);display:flex;align-items:center;justify-content:center;gap:9px;margin-bottom:20px;}
+.callout-eyebrow::before,.callout-eyebrow::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.08);max-width:60px;}
+.callout h2{font-size:34px;font-weight:800;letter-spacing:-.04em;color:var(--white);line-height:1.1;max-width:20ch;margin:0 auto;}
+.callout p{font-size:15.5px;color:rgba(255,255,255,.45);margin-top:16px;line-height:1.7;max-width:52ch;margin-left:auto;margin-right:auto;}
+.callout-chips{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:26px;}
+.callout-chip{display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:var(--r-pill);font-size:13px;font-weight:600;background:rgba(255,255,255,.06);color:rgba(255,255,255,.6);border:1px solid rgba(255,255,255,.1);}
+
+/* Footer */
+footer{background:var(--ink-900);padding:44px 0 36px;border-top:1px solid rgba(255,255,255,.07);}
+footer .wrap{display:grid;grid-template-columns:1fr 1fr 1fr;gap:40px;}
+@media(max-width:720px){footer .wrap{grid-template-columns:1fr;gap:26px;}}
+.ft-brand p{font-size:12.5px;color:rgba(255,255,255,.3);margin-top:12px;line-height:1.65;max-width:33ch;}
+.ft-col h4{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.28);margin-bottom:13px;}
+.ft-col ul{list-style:none;display:flex;flex-direction:column;gap:9px;}
+.ft-col ul li a{color:rgba(255,255,255,.42);text-decoration:none;font-size:13px;font-weight:500;transition:color .15s;}
+.ft-col ul li a:hover{color:rgba(255,255,255,.85);}
+.ft-bottom{border-top:1px solid rgba(255,255,255,.07);margin-top:36px;padding-top:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
+.ft-bottom p{font-size:11.5px;color:rgba(255,255,255,.22);}
+.ft-tag{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:rgba(255,255,255,.18);padding:5px 11px;border:1px solid rgba(255,255,255,.08);border-radius:var(--r-pill);}
+
+@media (prefers-reduced-motion: reduce){*{transition:none !important;animation:none !important;scroll-behavior:auto !important;}}
+</style>
 </head>
-<body class="min-h-screen">
-  <!-- NOTE: intentionally minimal — both demo pages get a visual redesign later. -->
-  <header class="bg-white border-b border-line px-6 py-4 flex items-center justify-between">
-    <div>
-      <div class="font-bold text-lg">ICICI Lombard <span class="text-muted text-sm font-normal">General Insurance</span></div>
-      <div class="text-primary text-xs font-semibold">TripSecure+ · Live Flight Status (multi-vendor)</div>
+<body>
+
+<!-- NAV -->
+<nav class="topbar">
+  <div class="wrap">
+    <a href="/landing" class="nav-brand">
+      <img src="/static/assets/logo.svg" alt="TripSecure+" class="nav-logo">
+      <div class="nav-divider"></div>
+      <div class="nav-client">ICICI Lombard<span>Product 4233</span></div>
+    </a>
+    <div class="nav-pages">
+      <a href="/" class="nav-pg">Simulator</a>
+      <a href="/live" class="nav-pg active">Multi-vendor</a>
     </div>
-    <a href="/" class="text-sm text-tertiary underline">See the alert pipeline demo →</a>
-  </header>
+  </div>
+</nav>
 
-  <main class="max-w-3xl mx-auto px-6 py-8 flex flex-col gap-6">
+<!-- INTRO -->
+<section class="intro">
+  <div class="wrap">
+    <div class="eyebrow">Multi-vendor reconciliation</div>
+    <h1>Two feeds. One verdict.</h1>
+    <p>The same brain monitors a flight through FlightAware AeroAPI and AeroDataBox simultaneously — vendors often disagree on timing and freshness. The reconciler resolves both feeds into a single trustworthy status. Read-only: no monitoring or messages are triggered here.</p>
+  </div>
+</section>
 
-    <!-- Lookup -->
-    <section class="card p-5">
-      <h2 class="font-bold text-base mb-1">Real-time flight status lookup</h2>
-      <p class="text-muted text-sm mb-4">Enter a flight number — the engine queries both vendors and <b>reconciles</b> them into one verdict (vendors often disagree on freshness; the in-house brain resolves it). Use “One feed” to inspect a single provider.</p>
-      <form id="live-form" class="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
-        <div class="sm:col-span-1">
-          <label class="text-xs text-muted block mb-1">Flight number</label>
-          <input id="live-flight" class="inp uppercase" placeholder="6E1341" required />
-        </div>
-        <div class="sm:col-span-1">
-          <label class="text-xs text-muted block mb-1">Date</label>
-          <input id="live-date" type="date" class="inp" required />
-        </div>
-        <div class="sm:col-span-1">
-          <label class="text-xs text-muted block mb-1">Single feed (optional)</label>
-          <select id="live-vendor" class="inp">
-            <option value="flightaware">FlightAware</option>
-            <option value="aerodatabox">AeroDataBox</option>
-          </select>
-        </div>
-        <div class="sm:col-span-1 flex gap-2">
-          <button type="submit" class="btn w-full" title="Query both vendors and reconcile">Reconcile both</button>
-          <button type="button" id="live-single" class="try" title="Query only the selected feed">One feed</button>
-        </div>
-      </form>
+<!-- REAL LOOKUP -->
+<div class="lookup-bar">
+  <div class="wrap">
+    <div class="sec-eyebrow" style="margin-bottom:14px;">Live lookup <span class="pill-live">real vendor feeds</span></div>
+    <form id="live-form" class="live-form" autocomplete="off">
+      <div class="lf-group">
+        <label class="lf-label" for="live-flight">Flight number</label>
+        <input id="live-flight" class="lf-input lf-code" placeholder="6E1341" required>
+      </div>
+      <div class="lf-group">
+        <label class="lf-label" for="live-date">Date</label>
+        <input id="live-date" class="lf-input" type="date" required>
+      </div>
+      <div class="lf-group">
+        <label class="lf-label" for="live-vendor">Single feed (optional)</label>
+        <select id="live-vendor" class="lf-input">
+          <option value="flightaware">FlightAware</option>
+          <option value="aerodatabox">AeroDataBox</option>
+        </select>
+      </div>
+      <div class="live-actions">
+        <button type="submit" class="lf-btn" title="Query both vendors and reconcile">Reconcile both</button>
+        <button type="button" id="live-single" class="lf-btn ghost" title="Query only the selected feed">One feed</button>
+      </div>
+    </form>
+    <p class="lookup-note" id="lookup-note">Enter a flight near today's date (FlightAware resolves ~2 days out). Needs vendor API keys configured on the server.</p>
+  </div>
+</div>
 
-      <div id="live-result" class="mt-5"></div>
-    </section>
+<!-- RESULT (real lookup renders here) -->
+<div class="wrap">
+  <div class="sec" id="live-result-wrap" style="padding-top:24px;">
+    <div id="live-result"></div>
+  </div>
+</div>
 
-    <!-- Edge cases handled -->
-    <section class="card p-5" id="live-edgecases">
-      <h2 class="font-bold text-base mb-1">Edge cases handled by the engine</h2>
-      <p class="text-muted text-sm mb-4">These are covered in code. Click “try it” to see the real behaviour.</p>
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div class="border border-line rounded-lg p-3">
-          <div class="font-semibold text-sm">IATA → ICAO / spacing</div>
-          <p class="text-muted text-xs mt-1 mb-2">Ticket ident (<code>6E1341</code>) maps to FlightAware ICAO (<code>IGO1341</code>); AeroDataBox’s spaced form is normalised.</p>
-          <button class="try" data-try="iata">try it</button>
+<!-- ILLUSTRATIVE SCENARIOS -->
+<div class="wrap">
+  <div class="sec" style="border-top:1px solid var(--line);">
+    <div class="sec-eyebrow">Illustrative scenarios <span class="pill-illus">canned — not live</span></div>
+    <h2>What reconciliation looks like</h2>
+    <p>Real feeds rarely diverge on demand, so these three are fixed examples that show how the brain resolves disagreement. The lookup above is the live one.</p>
+    <div class="scen-tabs">
+      <button class="stab" data-scen="agree">Feeds agree</button>
+      <button class="stab active" data-scen="diverge">ETA diverges</button>
+      <button class="stab" data-scen="depart">Departure split</button>
+    </div>
+    <p class="scen-desc" id="scen-desc"></p>
+    <div id="scen-panel"></div>
+  </div>
+</div>
+
+<!-- EDGE CASES -->
+<div class="wrap">
+  <div class="sec" id="live-edgecases" style="border-top:1px solid var(--line);">
+    <div class="sec-eyebrow">Edge cases handled by the engine <span class="pill-live">real calls</span></div>
+    <h2>Click “try it” to run a real lookup</h2>
+    <div class="edge-grid">
+      <div class="edge-card">
+        <div class="et">IATA → ICAO / spacing</div>
+        <p>Ticket ident (<code>6E1341</code>) maps to FlightAware ICAO (<code>IGO1341</code>); AeroDataBox’s spaced form is normalised.</p>
+        <button class="try" data-try="iata">try it</button>
+      </div>
+      <div class="edge-card">
+        <div class="et">Flight not found</div>
+        <p>A bogus ident returns a clean message, not a crash or empty screen.</p>
+        <button class="try" data-try="notfound">try it</button>
+      </div>
+      <div class="edge-card">
+        <div class="et">Future-date / rate-limit</div>
+        <p>FlightAware’s ~2-day future limit (400) and AeroDataBox’s ~1 req/s (429) surface readable messages.</p>
+        <button class="try" data-try="future">try it</button>
+      </div>
+      <div class="edge-card">
+        <div class="et">Gate vs runway / reconciliation</div>
+        <p>Delay is computed from the best <b>gate-arrival</b> estimate (not runway touchdown); both feeds reconcile to one status.</p>
+        <button class="try" data-try="gate">try it</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RULES -->
+<section class="rules-sec">
+  <div class="wrap">
+    <div class="sec-eyebrow">Reconciliation rules</div>
+    <h2 style="font-size:28px;letter-spacing:-.03em;">How the brain resolves two feeds</h2>
+    <p style="font-size:15px;color:var(--slate-500);margin-top:8px;">Deterministic priority — no guesswork, no vendor-specific logic.</p>
+    <div class="rules-grid">
+      <div class="rule-card">
+        <div class="rule-ic" style="background:var(--o-50);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--brand)" stroke-width="2" stroke-linecap="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
         </div>
-        <div class="border border-line rounded-lg p-3">
-          <div class="font-semibold text-sm">Flight not found</div>
-          <p class="text-muted text-xs mt-1 mb-2">A bogus ident returns a clean message, not a crash or empty screen.</p>
-          <button class="try" data-try="notfound">try it</button>
+        <h3>Most-progressed state wins</h3>
+        <p>Lifecycle priority <code>landed &gt; cancelled &gt; diverted &gt; departed &gt; delay tiers</code>. If one feed is further along, it wins — a diverging feed is usually just lagging.</p>
+      </div>
+      <div class="rule-card">
+        <div class="rule-ic" style="background:var(--blue-bg);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--blue)" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
         </div>
-        <div class="border border-line rounded-lg p-3">
-          <div class="font-semibold text-sm">Future-date / rate-limit</div>
-          <p class="text-muted text-xs mt-1 mb-2">FlightAware ~2-day future limit (400) and AeroDataBox ~1 req/s (429) surface readable messages.</p>
-          <button class="try" data-try="future">try it</button>
+        <h3>Best gate-arrival estimate</h3>
+        <p>Delay is computed from the best gate-arrival estimate (<code>actual_in</code> / <code>estimated_in</code>), never runway touchdown.</p>
+      </div>
+      <div class="rule-card">
+        <div class="rule-ic" style="background:var(--teal-bg);">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--teal)" stroke-width="2" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>
         </div>
-        <div class="border border-line rounded-lg p-3">
-          <div class="font-semibold text-sm">Gate vs runway / reconciliation</div>
-          <p class="text-muted text-xs mt-1 mb-2">Delay is computed from the best <b>gate-arrival</b> estimate (not runway touchdown); both feeds reconcile to one status.</p>
-          <button class="try" data-try="gate">try it</button>
+        <h3>Different occurrences refuse to merge</h3>
+        <p>If vendors resolve different legs (date interpreted local vs UTC), the engine detects the &gt;6h spread and declines to reconcile rather than emit nonsense.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CALLOUT -->
+<section class="callout">
+  <div class="wrap">
+    <div class="callout-eyebrow">Architecture</div>
+    <h2>The data feed is a commodity. The brain is the asset.</h2>
+    <p>Add a third vendor, swap FlightAware for any other provider, or run with one feed only — the decision engine doesn’t change. Only the adapter changes.</p>
+    <div class="callout-chips">
+      <span class="callout-chip"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Pure Python — zero vendor SDKs in the brain</span>
+      <span class="callout-chip"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Fully unit-testable offline</span>
+      <span class="callout-chip"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Add vendors without changing the decision logic</span>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="wrap">
+    <div class="ft-brand">
+      <div style="display:flex;align-items:center;gap:11px;margin-bottom:11px;">
+        <div style="width:34px;height:34px;border-radius:9px;background:rgba(255,255,255,.09);display:flex;align-items:center;justify-content:center;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21 4 19.5 2.5S18 2 16.5 3.5L13 7 4.8 5.2a.5.5 0 0 0-.5.3l-.9 2.1c-.2.5 0 1 .4 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 4.2c.3.4.8.5 1.3.4l2.1-.9a.5.5 0 0 0 .3-.5Z"/></svg>
+        </div>
+        <div>
+          <div style="font-size:15px;font-weight:800;color:#fff;letter-spacing:-.02em;">TripSecure+</div>
+          <div style="font-size:10px;font-weight:600;color:rgba(255,255,255,.3);letter-spacing:.05em;text-transform:uppercase;">ICICI Lombard · Product 4233</div>
         </div>
       </div>
-    </section>
-  </main>
+      <p>Flight delay monitoring &amp; notification. No money is moved; this service only monitors and alerts. DPDP Act §6 compliant.</p>
+    </div>
+    <div class="ft-col">
+      <h4>Demo pages</h4>
+      <ul>
+        <li><a href="/">Decision brain simulator</a></li>
+        <li><a href="/live">Multi-vendor reconciliation</a></li>
+        <li><a href="/landing">Product overview</a></li>
+      </ul>
+    </div>
+    <div class="ft-col">
+      <h4>Legal &amp; data</h4>
+      <ul>
+        <li><a href="#">DPDP Act §6 consent</a></li>
+        <li><a href="#">PII isolation policy</a></li>
+        <li><a href="#">ICICI Lombard terms</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="wrap">
+    <div class="ft-bottom">
+      <p>© 2026 ICICI Lombard General Insurance Co. Ltd. · TripSecure+ is a registered product.</p>
+      <span class="ft-tag">Monitoring only · Phase 1</span>
+    </div>
+  </div>
+</footer>
 
-  <script>
-    const STATE_COLORS = {
-      REGISTERED:'#64748B', ON_TIME:'#15803D', DELAYED_T1:'#E8740C', DELAYED_T2:'#E8740C',
-      DELAYED_T3:'#B02A30', DEPARTED:'#0E6B86', LANDED:'#0E6B86', CANCELLED:'#B02A30',
-      DIVERTED:'#E8740C', CLOSED:'#64748B',
-    };
-    const form = document.getElementById('live-form');
-    const resultEl = document.getElementById('live-result');
-    const fFlight = document.getElementById('live-flight');
-    const fDate = document.getElementById('live-date');
-    const fVendor = document.getElementById('live-vendor');
+<script>
+/* ============================================================
+   Real wiring:
+     GET /live/reconcile?flight=&date=        → both vendors, one verdict
+     GET /live/lookup?flight=&date=&vendor=   → single feed
+   Plus three CLEARLY-LABELLED illustrative (canned) scenarios.
+   ============================================================ */
+const $ = (id)=>document.getElementById(id);
+const VENDOR_META = {
+  flightaware:{name:'FlightAware AeroAPI', sub:'AeroAPI v4', icon:'FA', ibg:'var(--blue-bg)', ic:'var(--blue)'},
+  aerodatabox:{name:'AeroDataBox', sub:'via RapidAPI', icon:'ADB', ibg:'var(--teal-bg)', ic:'var(--teal)'},
+};
+const STATE_STYLE = {
+  REGISTERED:{c:'var(--slate-500)',bg:'var(--surface-100)',d:'var(--slate-400)',b:'var(--line-strong)'},
+  ON_TIME:   {c:'var(--green)',    bg:'var(--green-bg)', d:'var(--green-dot)',b:'rgba(22,163,74,.25)'},
+  DELAYED_T1:{c:'var(--amber-ink)',bg:'var(--amber-bg)', d:'var(--amber)',   b:'rgba(243,154,11,.3)'},
+  DELAYED_T2:{c:'var(--brand)',    bg:'var(--o-50)',     d:'var(--brand)',   b:'rgba(232,89,12,.3)'},
+  DELAYED_T3:{c:'var(--maroon)',   bg:'var(--maroon-bg)',d:'var(--maroon)',  b:'rgba(176,42,48,.3)'},
+  DEPARTED:  {c:'var(--teal)',     bg:'var(--teal-bg)',  d:'var(--teal)',    b:'rgba(14,107,134,.3)'},
+  LANDED:    {c:'var(--teal)',     bg:'var(--teal-bg)',  d:'var(--teal)',    b:'rgba(14,107,134,.3)'},
+  CANCELLED: {c:'var(--maroon)',   bg:'var(--maroon-bg)',d:'var(--maroon)',  b:'rgba(176,42,48,.3)'},
+  DIVERTED:  {c:'var(--brand)',    bg:'var(--o-50)',     d:'var(--brand)',   b:'rgba(232,89,12,.3)'},
+};
+const STATE_LABEL = {REGISTERED:'Registered',ON_TIME:'On time',DELAYED_T1:'Delayed — Tier 1',DELAYED_T2:'Delayed — Tier 2',DELAYED_T3:'Delayed — Tier 3',DEPARTED:'Departed',LANDED:'Landed',CANCELLED:'Cancelled',DIVERTED:'Diverted'};
 
-    // default date = today
-    fDate.value = new Date().toISOString().slice(0, 10);
+function fmt(dt){ if(!dt) return '—'; try{ return new Date(dt).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',timeZone:'Asia/Kolkata'})+' IST'; }catch{ return dt; } }
+function stBadge(state){ const s=STATE_STYLE[state]||STATE_STYLE.REGISTERED; return `<span class="vc-badge" style="background:${s.bg};color:${s.c};border-color:${s.b}"><span style="width:7px;height:7px;border-radius:50%;background:${s.d};display:inline-block"></span>${STATE_LABEL[state]||state}</span>`; }
 
-    function fmt(dt) { if (!dt) return '—'; try { return new Date(dt).toLocaleString('en-IN', { dateStyle:'medium', timeStyle:'short', timeZone:'Asia/Kolkata' }) + ' IST'; } catch { return dt; } }
-    function badge(state) { const c = STATE_COLORS[state] || '#64748B'; return `<span class="badge" style="background:${c}1a;color:${c};border:1px solid ${c}55">${(state||'—').replace(/_/g,' ')}</span>`; }
-    function flagsLine(s) { const delay = s.delay_minutes == null ? '—' : (s.delay_minutes + ' min'); return `delay ${delay}${s.departed?' · departed':''}${s.cancelled?' · cancelled':''}${s.diverted?' · diverted':''}`; }
+/* ---- vendor card from a normalized feed ---- */
+function vendorCard(vendorKey, feed){
+  const m = VENDOR_META[vendorKey] || {name:vendorKey, sub:'', icon:'?', ibg:'var(--surface-100)', ic:'var(--slate-500)'};
+  const head = `<div class="vc-head"><div class="vc-vendor"><div class="vc-icon" style="background:${m.ibg};color:${m.ic}">${m.icon}</div><div class="vc-name">${m.name}<small>${m.sub}</small></div></div>${feed.updated?`<span class="vc-updated ${feed.stale?'stale':''}">${feed.updated}</span>`:''}</div>`;
+  if(!feed.ok){ return `<div class="vendor-card">${head}<div class="vc-body"><div class="vc-err">${feed.error||'No data'}</div></div></div>`; }
+  const s=feed.status;
+  const delay = s.delay_minutes==null ? '—' : (s.delay_minutes===0?'On schedule':`+${s.delay_minutes} min`);
+  const dep = s.departed?'<span class="vc-rowval fresh">Yes</span>':'<span class="vc-rowval muted">No</span>';
+  const rows = `<div class="vc-rows">
+      <div class="vc-row"><span class="vc-rowlabel">Ident</span><span class="vc-rowval">${feed.resolved_ident||'—'}</span></div>
+      <div class="vc-row"><span class="vc-rowlabel">Scheduled</span><span class="vc-rowval">${fmt(s.scheduled_in_utc)}</span></div>
+      <div class="vc-row"><span class="vc-rowlabel">Estimated</span><span class="vc-rowval ${feed.highlightEta?'highlight':''}">${fmt(s.estimated_in_utc)}</span></div>
+      <div class="vc-row"><span class="vc-rowlabel">Delay</span><span class="vc-rowval ${s.delay_minutes>=60?'highlight':(s.delay_minutes>0?'':'muted')}">${delay}</span></div>
+      <div class="vc-row"><span class="vc-rowlabel">Departed</span>${dep}</div>
+    </div>`;
+  return `<div class="vendor-card">${head}<div class="vc-body">${stBadge(s.state)}${rows}</div></div>`;
+}
 
-    function renderError(msg) {
-      resultEl.innerHTML = `<div class="border border-line rounded-lg p-4 bg-[#FCEBEC] text-primary text-sm">${msg}</div>`;
-    }
-
-    // A compact per-vendor row (used inside the reconciled view and standalone).
-    function feedRow(f) {
-      if (!f.ok) return `<div class="text-sm py-1"><b>${f.vendor}</b>: <span class="text-secondary">${f.error}</span></div>`;
-      const s = f.status;
-      return `<div class="text-sm py-1 flex items-center gap-2 flex-wrap">
-        <b class="w-28 inline-block">${f.vendor}</b> ${badge(s.state)}
-        <span class="text-muted">${f.requested_ident||''}${f.resolved_ident?(' → '+f.resolved_ident):''} · ${flagsLine(s)} · est ${fmt(s.estimated_in_utc)}</span>
+/* ---- verdict card ---- */
+function verdictCard(v){
+  // v: {mismatch, agree, state, eta, delay_minutes, etaSrc, decision, note, msg, illustrative}
+  let badgeCls='agree', badgeTxt='Feeds agree';
+  if(v.mismatch){ badgeCls='mismatch'; badgeTxt='Different occurrences'; }
+  else if(!v.agree){ badgeCls='differ'; badgeTxt='Feeds differ'; }
+  const st=STATE_STYLE[v.state]||STATE_STYLE.REGISTERED;
+  const stateChip = v.mismatch ? '' : `<div class="verdict-state" style="background:${st.bg};color:${st.c};border-color:${st.b}"><span class="vsdot" style="background:${st.d}"></span>${STATE_LABEL[v.state]||v.state}</div>`;
+  let rows='';
+  if(!v.mismatch){
+    const delay = v.delay_minutes==null?'—':(v.delay_minutes===0?'On schedule':`+${v.delay_minutes} min`);
+    rows = `<div class="verdict-rows">
+        <div class="verdict-row"><span class="vrlabel">Estimated arrival</span><span class="vrval key">${fmt(v.eta)}${v.etaSrc?` <span style="color:var(--slate-400);font-weight:600">← ${v.etaSrc}</span>`:''}</span></div>
+        <div class="verdict-row"><span class="vrlabel">Delay</span><span class="vrval">${delay}</span></div>
       </div>`;
-    }
+  }
+  let msg;
+  if(v.illustrative && v.msg){
+    msg = `<div class="msg-preview"><div class="mp-head"><div class="mp-ic"><svg width="13" height="13" viewBox="0 0 24 24" fill="white"><path d="M17.5 14.4c-.3-.1-1.8-.9-2-1-.3-.1-.5-.1-.7.1-.2.3-.8 1-.9 1.2-.2.2-.3.2-.6.1-.3-.2-1.3-.5-2.4-1.5-.9-.8-1.5-1.8-1.7-2-.2-.3 0-.5.1-.6l.4-.5c.1-.2.2-.3.3-.5.1-.2 0-.4 0-.5l-1-2.2c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1.1 2.9 1.2 3.1c.1.2 2.1 3.2 5.1 4.5.7.3 1.3.5 1.7.6.7.2 1.4.2 1.9.1.6-.1 1.8-.7 2-1.4.2-.7.2-1.3.2-1.4-.1-.1-.3-.2-.6-.3M12 22h0a9.9 9.9 0 0 1-5-1.4l-.4-.2-3.7 1 1-3.6-.2-.4A9.9 9.9 0 0 1 2.2 12C2.2 6.5 6.6 2 12 2c2.6 0 5.1 1 7 2.9a9.8 9.8 0 0 1 2.9 7c0 5.5-4.4 9.9-9.9 9.9m8.4-18.3A11.8 11.8 0 0 0 12 0C5.5 0 .2 5.3.2 11.9c0 2.1.5 4.1 1.6 5.9L0 24l6.3-1.7a11.9 11.9 0 0 0 5.7 1.5h0c6.6 0 11.9-5.3 11.9-11.9a11.8 11.8 0 0 0-3.5-8.4Z"/></svg></div><span class="mp-name">TripSecure+ · WhatsApp</span></div><div class="mp-body">${v.msg}</div></div>`;
+  } else if(v.illustrative){
+    msg = `<div class="no-notify"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M9 12l2 2 4-4"/></svg>No notification — flight is on time</div>`;
+  } else {
+    msg = `<div class="no-notify"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>Read-only lookup — the brain’s verdict is shown, but no customer message is sent from this page.</div>`;
+  }
+  return `<div class="verdict-card"><div class="vc-verdict-head"><div class="verdict-eyebrow"><span class="code-tag">reconcile()</span><span class="agree-badge ${badgeCls}">${badgeTxt}</span>${v.illustrative?'<span class="pill-illus">illustrative</span>':''}</div>${stateChip}</div><div class="vc-verdict-body">${rows}<div class="brain-box"><div class="brain-box-label">Brain decision</div><div class="brain-decision">${v.decision||''}</div><div class="brain-note">${v.note||''}</div></div>${msg}</div></div>`;
+}
 
-    // Reconciled view: headline verdict + both source feeds + explanation.
-    function renderReconcile(d) {
-      const mismatch = d.occurrence_mismatch || !d.reconciled;
-      const headColor = mismatch ? '#B02A30' : (d.agreement ? '#15803D' : '#E8740C');
-      const headline = mismatch
-        ? `<span class="badge" style="background:#B02A301a;color:#B02A30;border:1px solid #B02A3055">different flight occurrences</span>`
-        : `<span class="text-xs text-muted">Reconciled verdict</span> ${badge(d.reconciled.state)}`;
-      const sub = mismatch
-        ? `<div class="text-sm mt-2 text-muted">${d.requested_ident} on ${d.flight_date} — vendors returned different legs; not merged.</div>`
-        : `<div class="text-sm mt-2 text-muted">${d.requested_ident} on ${d.flight_date} · ${flagsLine(d.reconciled)} · est ${fmt(d.reconciled.estimated_in_utc)}</div>`;
-      resultEl.innerHTML = `
-        <div class="border border-line rounded-lg p-4">
-          <div class="flex items-center justify-between flex-wrap gap-2">
-            <div class="flex items-center gap-2">${headline}</div>
-            <span class="text-xs" style="color:${headColor}">${mismatch ? 'cannot reconcile' : (d.agreement ? 'feeds agree' : 'feeds differ')}</span>
-          </div>
-          ${sub}
+function panelHTML(feedsHTML, verdict){
+  return `<div class="mv-panel"><div class="mv-feeds">${feedsHTML}</div>${verdictCard(verdict)}</div>`;
+}
 
-          <div class="mt-3 pt-3 border-t border-line">
-            <div class="text-xs text-muted mb-1">Source feeds</div>
-            ${d.feeds.map(feedRow).join('')}
-          </div>
+/* ---- REAL: reconcile ---- */
+function renderReconcile(d){
+  const feedByVendor = {}; (d.feeds||[]).forEach(f=>feedByVendor[f.vendor]=f);
+  const order = ['flightaware','aerodatabox'];
+  const highlightEta = d.reconciled && d.feeds ? null : null;
+  const feedsHTML = order.map(v=>{
+    const f = feedByVendor[v]; if(!f) return '';
+    // highlight the ETA on the feed whose estimate matches the reconciled one
+    const fh = (d.reconciled && f.ok && f.status && f.status.estimated_in_utc===d.reconciled.estimated_in_utc);
+    return vendorCard(v, {...f, highlightEta:fh});
+  }).join('');
+  let verdict;
+  if(d.occurrence_mismatch){
+    verdict = {mismatch:true, decision:'Not reconciled', note:d.explanation};
+  } else {
+    const r=d.reconciled||{};
+    verdict = {
+      mismatch:false, agree:d.agreement, state:r.state, eta:r.estimated_in_utc, delay_minutes:r.delay_minutes,
+      decision: d.agreement ? 'Feeds agree — single verdict' : 'Feeds reconciled by engine priority',
+      note: d.explanation, illustrative:false,
+    };
+  }
+  $('live-result').innerHTML = panelHTML(feedsHTML, verdict);
+}
 
-          <p class="text-xs mt-3 p-2 rounded" style="background:${headColor}12;color:#1F2937">${d.explanation}</p>
-          <p class="text-muted text-xs mt-2">${d.notes}</p>
-          <p class="text-muted text-xs">Read-only — no monitoring or messages are triggered here.</p>
-        </div>`;
-    }
+/* ---- REAL: single feed ---- */
+function renderSingle(d){
+  const feedsHTML = vendorCard(d.vendor, {ok:true, status:d.status, resolved_ident:d.resolved_ident});
+  const verdict = {
+    mismatch:false, agree:true, state:d.status.state, eta:d.status.estimated_in_utc, delay_minutes:d.status.delay_minutes,
+    decision:`Single-feed lookup · ${VENDOR_META[d.vendor]?.name||d.vendor}`,
+    note:d.notes||'', illustrative:false,
+  };
+  $('live-result').innerHTML = panelHTML(feedsHTML, verdict);
+}
 
-    // Single-feed view (used by "One feed" + some edge-case demos).
-    function renderSingle(d) {
-      resultEl.innerHTML = `
-        <div class="border border-line rounded-lg p-4">
-          <div class="flex items-center justify-between flex-wrap gap-2">
-            ${badge(d.status.state)}
-            <span class="text-xs text-muted">Source: <b>${d.vendor}</b></span>
-          </div>
-          <div class="text-sm mt-3">
-            <div><span class="text-muted">Ident:</span> ${d.requested_ident} <span class="text-muted">→</span> <b>${d.resolved_ident}</b></div>
-            <div class="mt-1"><span class="text-muted">Scheduled:</span> ${fmt(d.status.scheduled_in_utc)}</div>
-            <div><span class="text-muted">Estimated:</span> ${fmt(d.status.estimated_in_utc)}</div>
-            <div><span class="text-muted">Actual:</span> ${fmt(d.status.actual_in_utc)}</div>
-            <div class="mt-1">${flagsLine(d.status)}</div>
-          </div>
-          <p class="text-muted text-xs mt-3">${d.notes}</p>
-        </div>`;
-    }
+function showMsg(text, cls){ const n=$('lookup-note'); n.textContent=text; n.className='lookup-note'+(cls?' '+cls:''); }
+function renderError(msg){ $('live-result').innerHTML = `<div class="vendor-card"><div class="vc-body"><div class="vc-err">${msg}</div></div></div>`; }
 
-    async function reconcileBoth() {
-      const flight = fFlight.value.trim().toUpperCase(); const date = fDate.value;
-      if (!flight || !date) return;
-      resultEl.innerHTML = '<div class="text-muted text-sm p-2">Querying both feeds…</div>';
-      try {
-        const res = await fetch(`/live/reconcile?flight=${encodeURIComponent(flight)}&date=${encodeURIComponent(date)}`);
-        const data = await res.json();
-        if (!res.ok) { renderError(data.detail || `Error ${res.status}`); return; }
-        renderReconcile(data);
-      } catch (e) { renderError('Network error: ' + e.message); }
-    }
+async function reconcileBoth(){
+  const flight=$('live-flight').value.trim().toUpperCase(), date=$('live-date').value;
+  if(!flight||!date){ showMsg('Enter a flight number and date.','err'); return; }
+  $('live-result').innerHTML='<div class="vendor-card"><div class="vc-body" style="color:var(--slate-400);font-size:13px">Querying both feeds…</div></div>';
+  try{
+    const res=await fetch(`/live/reconcile?flight=${encodeURIComponent(flight)}&date=${encodeURIComponent(date)}`);
+    const data=await res.json();
+    if(!res.ok){ renderError(data.detail||`Error ${res.status}`); showMsg(data.detail||'Lookup failed','err'); return; }
+    renderReconcile(data); showMsg(`Reconciled ${flight} on ${date} from real vendor feeds.`,'ok');
+  }catch(e){ renderError('Network error: '+e.message); showMsg('Network error','err'); }
+}
+async function singleLookup(vendor){
+  const flight=$('live-flight').value.trim().toUpperCase(), date=$('live-date').value;
+  if(!flight||!date){ showMsg('Enter a flight number and date.','err'); return; }
+  $('live-result').innerHTML='<div class="vendor-card"><div class="vc-body" style="color:var(--slate-400);font-size:13px">Looking up…</div></div>';
+  try{
+    const res=await fetch(`/live/lookup?flight=${encodeURIComponent(flight)}&date=${encodeURIComponent(date)}&vendor=${vendor}`);
+    const data=await res.json();
+    if(!res.ok){ renderError(data.detail||`Error ${res.status}`); showMsg(data.detail||'Lookup failed','err'); return; }
+    renderSingle(data); showMsg(`Single-feed lookup (${vendor}) for ${flight}.`,'ok');
+  }catch(e){ renderError('Network error: '+e.message); showMsg('Network error','err'); }
+}
 
-    async function singleLookup(vendor) {
-      const flight = fFlight.value.trim().toUpperCase(); const date = fDate.value;
-      if (!flight || !date) return;
-      resultEl.innerHTML = '<div class="text-muted text-sm p-2">Looking up…</div>';
-      try {
-        const res = await fetch(`/live/lookup?flight=${encodeURIComponent(flight)}&date=${encodeURIComponent(date)}&vendor=${vendor}`);
-        const data = await res.json();
-        if (!res.ok) { renderError(data.detail || `Error ${res.status}`); return; }
-        renderSingle(data);
-      } catch (e) { renderError('Network error: ' + e.message); }
-    }
+$('live-form').addEventListener('submit', e=>{ e.preventDefault(); reconcileBoth(); });
+$('live-single').addEventListener('click', ()=> singleLookup($('live-vendor').value));
+document.querySelectorAll('[data-try]').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    const today=new Date().toISOString().slice(0,10);
+    const k=btn.dataset.try;
+    if(k==='iata'){ $('live-flight').value='6E1341'; $('live-date').value=today; singleLookup('flightaware'); }
+    else if(k==='notfound'){ $('live-flight').value='ZZ9999'; $('live-date').value=today; singleLookup('flightaware'); }
+    else if(k==='future'){ $('live-flight').value='6E1341'; $('live-date').value=new Date(Date.now()+30*864e5).toISOString().slice(0,10); singleLookup('flightaware'); }
+    else if(k==='gate'){ $('live-flight').value='6E1341'; $('live-date').value=today; reconcileBoth(); }
+    window.scrollTo({top:0, behavior:'smooth'});
+  });
+});
 
-    form.addEventListener('submit', (e) => { e.preventDefault(); reconcileBoth(); });
-    document.getElementById('live-single').addEventListener('click', () => singleLookup(fVendor.value));
+/* ---- Illustrative canned scenarios ---- */
+const SCEN = {
+  agree:{
+    desc:'Both providers report the same on-time status. The brain agrees with both feeds — no notification.',
+    feeds:{ flightaware:{ok:true,updated:'1 min ago',status:{scheduled_in_utc:'2026-06-06T05:40:00Z',estimated_in_utc:'2026-06-06T05:40:00Z',delay_minutes:0,departed:false,state:'ON_TIME'},resolved_ident:'IGO204'},
+            aerodatabox:{ok:true,updated:'3 min ago',status:{scheduled_in_utc:'2026-06-06T05:40:00Z',estimated_in_utc:'2026-06-06T05:40:00Z',delay_minutes:0,departed:false,state:'ON_TIME'},resolved_ident:'6E 204'} },
+    verdict:{mismatch:false,agree:true,state:'ON_TIME',eta:'2026-06-06T05:40:00Z',delay_minutes:0,decision:'No notification sent',note:'Both feeds agree. No tier threshold crossed.',illustrative:true},
+  },
+  diverge:{
+    desc:'FlightAware has a fresher update placing the flight in Tier 2. AeroDataBox is 6 minutes behind, still Tier 1. The reconciler takes the most-progressed state and the freshest ETA.',
+    feeds:{ flightaware:{ok:true,updated:'2 min ago',highlightEta:true,status:{scheduled_in_utc:'2026-06-06T05:40:00Z',estimated_in_utc:'2026-06-06T06:52:00Z',delay_minutes:72,departed:false,state:'DELAYED_T2'},resolved_ident:'IGO204'},
+            aerodatabox:{ok:true,updated:'8 min ago',stale:true,status:{scheduled_in_utc:'2026-06-06T05:40:00Z',estimated_in_utc:'2026-06-06T06:25:00Z',delay_minutes:45,departed:false,state:'DELAYED_T1'},resolved_ident:'6E 204'} },
+    verdict:{mismatch:false,agree:false,state:'DELAYED_T2',eta:'2026-06-06T06:52:00Z',delay_minutes:72,etaSrc:'FlightAware',decision:'Tier 2 threshold crossed — customer notified',note:'Most-progressed state wins (T2 > T1); freshest ETA used. Without reconciliation, AeroDataBox alone would have raised only a T1 alert.',illustrative:true,msg:'Your flight 6E204 is significantly delayed — new estimated arrival is 12:22 PM IST (+72 min). We’ll keep you informed of any further changes.'},
+  },
+  depart:{
+    desc:'FlightAware has confirmed departure. AeroDataBox hasn’t registered it yet — a common 5–8 minute lag. One feed is enough to trigger the departure event.',
+    feeds:{ flightaware:{ok:true,updated:'1 min ago',status:{scheduled_in_utc:'2026-06-06T05:40:00Z',estimated_in_utc:'2026-06-06T06:18:00Z',delay_minutes:38,departed:true,state:'DEPARTED'},resolved_ident:'IGO204'},
+            aerodatabox:{ok:true,updated:'6 min ago',stale:true,status:{scheduled_in_utc:'2026-06-06T05:40:00Z',estimated_in_utc:'2026-06-06T06:20:00Z',delay_minutes:40,departed:false,state:'DELAYED_T1'},resolved_ident:'6E 204'} },
+    verdict:{mismatch:false,agree:false,state:'DEPARTED',eta:'2026-06-06T06:18:00Z',delay_minutes:38,etaSrc:'FlightAware',decision:'Departure confirmed — customer notified',note:'departed = True the moment ANY feed reports it (OR logic). FlightAware has it, so the reconciled status is DEPARTED immediately.',illustrative:true,msg:'Your flight 6E204 has departed and is en route. Estimated arrival: 11:48 AM IST. We’ll notify you on landing.'},
+  },
+};
+function renderScen(key){
+  const sc=SCEN[key]; $('scen-desc').textContent=sc.desc;
+  const feedsHTML=['flightaware','aerodatabox'].map(v=>vendorCard(v, sc.feeds[v])).join('');
+  $('scen-panel').innerHTML=panelHTML(feedsHTML, sc.verdict);
+}
+document.querySelectorAll('.stab').forEach(tab=>{
+  tab.addEventListener('click', ()=>{ document.querySelectorAll('.stab').forEach(t=>t.classList.remove('active')); tab.classList.add('active'); renderScen(tab.dataset.scen); });
+});
 
-    // Edge-case "try it" buttons set inputs then run a real lookup.
-    document.querySelectorAll('[data-try]').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const today = new Date();
-        const kind = btn.dataset.try;
-        if (kind === 'iata')    { fFlight.value = '6E1341'; fDate.value = today.toISOString().slice(0,10); singleLookup('flightaware'); return; }
-        if (kind === 'notfound'){ fFlight.value = 'ZZ9999'; fDate.value = today.toISOString().slice(0,10); singleLookup('flightaware'); return; }
-        if (kind === 'future')  { const d = new Date(today.getTime() + 30*864e5); fFlight.value = '6E1341'; fDate.value = d.toISOString().slice(0,10); singleLookup('flightaware'); return; }
-        if (kind === 'gate')    { fFlight.value = '6E1341'; fDate.value = today.toISOString().slice(0,10); reconcileBoth(); return; }
-      });
-    });
-  </script>
+/* Init */
+$('live-date').value = new Date().toISOString().slice(0,10);
+renderScen('diverge');
+</script>
 </body>
 </html>

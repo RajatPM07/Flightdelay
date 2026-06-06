@@ -1,1095 +1,590 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TripSecure+ — Flight Delay Monitoring Demo</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Simulator — TripSecure+ Decision Brain · ICICI Lombard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* === Elevate Design Language Tokens === */
+:root {
+  --brand:#E8590C; --brand-bright:#F26722; --brand-dark:#C2470A;
+  --o-50:#FFF5EE; --o-100:#FFE7D6; --o-200:#FFC9A6;
+  --maroon:#B02A30; --maroon-bg:#FDF1F1;
+  --teal:#0E6B86; --teal-bg:#E7F4F8;
+  --ink-900:#16171C; --ink-700:#33363E;
+  --slate-600:#565B66; --slate-500:#6E7480; --slate-400:#9AA0AB;
+  --line:#ECEDF1; --line-strong:#E0E2E8;
+  --surface-100:#F3F4F7; --surface-50:#FAFAFB;
+  --paper:#FBFAF8; --white:#FFFFFF;
+  --blue:#3B7DFF; --blue-bg:#EAF1FF;
+  --green:#16A34A; --green-dot:#22C55E; --green-bg:#E4F7EC;
+  --amber:#F39A0B; --amber-ink:#B9740A; --amber-bg:#FFF4DF;
+  --grad-policy:linear-gradient(135deg,#EEF1FF 0%,#F4F1FF 48%,#FCF3EF 100%);
+  --r-md:12px; --r-lg:16px; --r-xl:22px; --r-2xl:28px; --r-pill:999px;
+  --sh-card:0 2px 14px rgba(20,22,28,.05);
+  --sh-lg:0 22px 50px -18px rgba(20,22,28,.22);
+  --font:'Plus Jakarta Sans',system-ui,sans-serif;
+  --mono:ui-monospace,'SF Mono',Menlo,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font);background:var(--paper);color:var(--ink-900);-webkit-font-smoothing:antialiased;line-height:1.5;}
+.wrap{max-width:1200px;margin:0 auto;padding:0 44px;}
+@media(max-width:768px){.wrap{padding:0 20px;}}
 
-  <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+/* Nav */
+.topbar{position:sticky;top:0;z-index:50;background:rgba(251,250,248,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line);}
+.topbar .wrap{display:flex;align-items:center;justify-content:space-between;height:64px;gap:24px;}
+.nav-brand{display:flex;align-items:center;gap:16px;text-decoration:none;}
+.nav-logo{height:34px;width:auto;display:block;flex-shrink:0;}
+.nav-divider{width:1px;height:22px;background:var(--line-strong);flex-shrink:0;}
+.nav-client{font-size:11px;font-weight:700;color:var(--slate-400);letter-spacing:.06em;text-transform:uppercase;white-space:nowrap;line-height:1.3;}
+.nav-client span{display:block;font-size:10px;font-weight:600;color:var(--slate-400);letter-spacing:.04em;margin-top:1px;}
+.nav-pages{display:flex;gap:4px;}
+.nav-pg{color:var(--slate-600);text-decoration:none;font-size:14px;font-weight:600;padding:7px 14px;border-radius:var(--r-lg);transition:all .15s;}
+.nav-pg:hover{background:var(--surface-100);color:var(--ink-900);}
+.nav-pg.active{background:var(--o-50);color:var(--brand);}
+@media(max-width:560px){.nav-sub{display:none;}.nav-pg{padding:6px 10px;font-size:13px;}}
 
-  <!-- Tailwind Play CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            primary:   '#B02A30',  /* ICICI Lombard maroon */
-            primaryDk: '#8A1F24',
-            secondary: '#E8740C',  /* orange accent */
-            tertiary:  '#0E6B86',  /* deep teal */
-            success:   '#15803D',  /* on-time green */
-            emerald:   '#15803D',  /* alias kept for JS class names */
-            ink:       '#1F2937',  /* charcoal text */
-            muted:     '#64748B',
-            canvas:    '#F4F5F7',  /* light page background */
-            line:      '#E5E7EB',  /* hairline border */
-          },
-          fontFamily: {
-            heading: ['Space Grotesk', 'sans-serif'],
-            body:    ['Inter', 'sans-serif'],
-          },
-        },
-      },
-    };
-  </script>
+/* Intro */
+.intro{padding:56px 0 44px;border-bottom:1px solid var(--line);}
+.eyebrow{font-size:11.5px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--brand);display:flex;align-items:center;gap:9px;margin-bottom:14px;}
+.eyebrow::before{content:'';width:16px;height:2px;background:var(--brand);border-radius:2px;}
+.intro h1{font-size:40px;font-weight:800;letter-spacing:-.04em;line-height:1.06;max-width:22ch;}
+.intro p{font-size:16.5px;color:var(--slate-500);margin-top:14px;max-width:62ch;line-height:1.65;text-wrap:pretty;}
+@media(max-width:640px){.intro h1{font-size:28px;}}
 
-  <!-- GSAP -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+/* Issue bar */
+.lookup-bar{background:var(--white);border-bottom:1px solid var(--line);padding:18px 0;}
+.issue-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+@media(max-width:760px){.issue-grid{grid-template-columns:1fr;}}
+.field-card{background:var(--surface-50);border:1.5px solid var(--line-strong);border-radius:var(--r-lg);padding:14px 16px;}
+.field-card h4{font-size:10px;font-weight:700;color:var(--slate-400);letter-spacing:.08em;text-transform:uppercase;margin-bottom:11px;}
+.field-row{display:flex;flex-wrap:wrap;gap:10px;}
+.lf-group{display:flex;flex-direction:column;gap:3px;flex:1;min-width:90px;}
+.lf-label{font-size:10px;font-weight:700;color:var(--slate-400);letter-spacing:.06em;text-transform:uppercase;}
+.lf-input{font-family:var(--font);font-size:14px;font-weight:600;color:var(--ink-900);background:var(--white);border:1px solid var(--line-strong);border-radius:9px;padding:8px 10px;outline:none;transition:border-color .15s,box-shadow .15s;}
+.lf-input:focus{border-color:var(--brand);box-shadow:0 0 0 3px rgba(232,89,12,.12);}
+.lf-input::placeholder{color:var(--slate-400);font-weight:500;}
+.lf-input.lf-code{text-transform:uppercase;}
+.issue-foot{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-top:14px;}
+.consent{display:flex;align-items:flex-start;gap:10px;max-width:62ch;cursor:pointer;}
+.consent input{margin-top:2px;width:17px;height:17px;accent-color:var(--brand);flex-shrink:0;cursor:pointer;}
+.consent span{font-size:12px;color:var(--slate-500);line-height:1.5;}
+.consent b{color:var(--ink-700);font-weight:700;}
+.lf-btn{padding:11px 26px;background:var(--ink-900);color:var(--white);font-family:var(--font);font-size:13.5px;font-weight:700;border:none;border-radius:var(--r-lg);cursor:pointer;transition:background .15s;white-space:nowrap;flex-shrink:0;}
+.lf-btn:hover{background:var(--brand);}
+.lf-btn:disabled{opacity:.45;cursor:not-allowed;}
+.lookup-note{font-size:12px;color:var(--slate-400);margin-top:12px;min-height:18px;}
+.lookup-note.ok{color:var(--teal);}
+.lookup-note.err{color:var(--maroon);}
 
-  <style>
-    /* ── Global ── */
-    *, *::before, *::after { box-sizing: border-box; }
-    html, body {
-      margin: 0; padding: 0;
-      background: #F4F5F7;
-      color: #1F2937;
-      font-family: 'Inter', sans-serif;
-      min-height: 100vh;
-    }
-    h1, h2, h3, h4, .heading {
-      font-family: 'Space Grotesk', sans-serif;
-    }
+.sim-outer{padding:36px 0 80px;}
+.sim-layout{display:grid;grid-template-columns:308px 1fr;gap:24px;align-items:start;}
+@media(max-width:900px){.sim-layout{grid-template-columns:1fr;}}
 
-    /* ── Enrolment panel (embedded portal card) ── */
-    .phone-shell {
-      width: 380px;
-      max-width: calc(100vw - 32px);
-      background: #FFFFFF;
-      border-radius: 16px;
-      border: 1px solid #E5E7EB;
-      box-shadow:
-        0 1px 2px rgba(16,24,40,0.04),
-        0 10px 28px rgba(16,24,40,0.08);
-      position: relative;
-      padding: 22px;
-      display: flex;
-      flex-direction: column;
-    }
+/* Flight card */
+.flight-card{background:var(--grad-policy);border:1px solid #DDD8EF;border-radius:var(--r-2xl);padding:22px;box-shadow:var(--sh-lg);position:sticky;top:82px;}
+.fc-eyebrow{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--slate-400);margin-bottom:14px;}
+.fc-route{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.fc-iata{font-size:26px;font-weight:800;letter-spacing:-.03em;}
+.fc-line{flex:1;height:1px;background:linear-gradient(90deg,var(--line-strong),var(--blue),var(--line-strong));margin:0 10px;position:relative;}
+.fc-plane{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);background:rgba(244,241,255,.9);padding:0 3px;color:var(--teal);}
+.fc-meta{font-size:12px;color:var(--slate-400);font-weight:500;margin-bottom:16px;}
+.state-badge{display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:var(--r-pill);font-size:13px;font-weight:700;transition:background-color .35s,color .35s,border-color .35s,transform .2s;border:1px solid transparent;}
+.state-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;transition:background .35s;}
+.fc-divider{height:1px;background:rgba(0,0,0,.07);margin:16px 0;}
 
-    /* ── Stepper ── */
-    .stepper-node {
-      width: 40px; height: 40px;
-      border-radius: 50%;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 12px; font-weight: 600; font-family: 'Space Grotesk', sans-serif;
-      border: 2px solid #E2E8F0;
-      background: #F8FAFC;
-      color: #94A3B8;
-      transition: border-color 0.3s, background 0.3s, color 0.3s, box-shadow 0.3s;
-      position: relative;
-      z-index: 1;
-      cursor: default;
-    }
-    .stepper-node.active-emerald { border-color: #15803D; background: #ECFDF3; color: #15803D; }
-    .stepper-node.active-orange  { border-color: #E8740C; background: #FFF4E8; color: #C25A00; }
-    .stepper-node.active-crimson { border-color: #B02A30; background: #FCEBEC; color: #B02A30; }
-    .stepper-node.active-blue    { border-color: #0E6B86; background: #E7F4F8; color: #0E6B86; }
+/* Step track */
+.step-track{display:flex;flex-direction:column;}
+.srow{display:flex;align-items:flex-start;gap:10px;}
+.sconnect{display:flex;flex-direction:column;align-items:center;width:16px;flex-shrink:0;}
+.sdot{width:9px;height:9px;border-radius:50%;border:2px solid var(--line-strong);background:var(--white);margin-top:3px;transition:all .3s;}
+.sdot.past{background:var(--green-dot);border-color:var(--green-dot);}
+.sdot.active{background:var(--brand);border-color:var(--brand);box-shadow:0 0 0 4px rgba(232,89,12,.15);}
+.sdot.term{background:var(--maroon);border-color:var(--maroon);}
+.sline{width:1.5px;flex:1;min-height:18px;background:var(--line);transition:background .3s;}
+.sline.past{background:var(--green-dot);}
+.slabel{font-size:12px;font-weight:600;color:var(--slate-400);padding-bottom:16px;line-height:1.3;transition:color .3s;}
+.slabel.past{color:var(--slate-500);}
+.slabel.active{color:var(--ink-900);font-weight:700;}
+.slabel small{display:block;font-size:10.5px;font-weight:500;color:var(--slate-400);margin-top:1px;}
+.brain-cfg{margin-top:14px;padding:9px 12px;background:rgba(0,0,0,.04);border-radius:var(--r-md);font-size:10.5px;color:var(--slate-400);font-family:var(--mono);line-height:1.6;}
 
-    /* Soft corporate pulse on the active node — subtle ring, no neon */
-    @keyframes pulse-soft {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(15,23,42,0.10); }
-      50%      { box-shadow: 0 0 0 6px rgba(15,23,42,0); }
-    }
-    .pulse-emerald, .pulse-orange, .pulse-crimson, .pulse-blue {
-      animation: pulse-soft 2.4s ease-in-out infinite;
-    }
+/* Controls */
+.controls-card{background:var(--white);border:1px solid var(--line);border-radius:var(--r-xl);padding:22px;box-shadow:var(--sh-card);}
+.ctrl-head{font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--slate-400);margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;gap:10px;}
+.ctrl-hint{font-size:10.5px;font-weight:600;color:var(--slate-400);text-transform:none;letter-spacing:0;text-align:right;}
+.btn-groups{display:flex;flex-direction:column;gap:14px;}
+.btn-grp{display:flex;flex-wrap:wrap;gap:7px;align-items:center;}
+.grp-label{width:100%;font-size:10.5px;font-weight:600;color:var(--slate-400);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px;}
+.ev-btn{display:inline-flex;align-items:center;padding:8px 14px;border-radius:var(--r-md);font-family:var(--font);font-size:12.5px;font-weight:700;cursor:pointer;border:1.5px solid transparent;transition:all .15s;white-space:nowrap;line-height:1;}
+.ev-btn:disabled{opacity:.35;cursor:not-allowed;pointer-events:none;}
+.btn-amber{background:var(--amber-bg);color:var(--amber-ink);border-color:rgba(243,154,11,.3);}
+.btn-amber:hover{background:#FFECC0;border-color:var(--amber);}
+.btn-orange{background:var(--o-100);color:var(--brand-dark);border-color:rgba(232,89,12,.25);}
+.btn-orange:hover{background:var(--o-200);border-color:var(--brand);}
+.btn-red{background:var(--maroon-bg);color:var(--maroon);border-color:rgba(176,42,48,.25);}
+.btn-red:hover{background:#FAD9DA;border-color:var(--maroon);}
+.btn-ghost{background:var(--surface-100);color:var(--slate-500);border:1.5px dashed var(--line-strong);}
+.btn-ghost:hover{color:var(--slate-600);}
+.btn-green{background:var(--green-bg);color:var(--green);border-color:rgba(22,163,74,.25);}
+.btn-green:hover{background:#C9F2D7;border-color:var(--green);}
+.btn-teal{background:var(--teal-bg);color:var(--teal);border-color:rgba(14,107,134,.25);}
+.btn-teal:hover{background:#C5E4EE;border-color:var(--teal);}
+.btn-reset{background:transparent;color:var(--slate-400);border-color:var(--line);}
+.btn-reset:hover{background:var(--surface-100);color:var(--slate-600);}
 
-    /* ── Stepper connector ── */
-    .stepper-line {
-      flex: 1; height: 2px;
-      background: #E5E7EB;
-      align-self: center;
-      position: relative;
-      z-index: 0;
-    }
-    .stepper-line.filled-emerald { background: #15803D; }
-    .stepper-line.filled-orange  { background: #E8740C; }
-    .stepper-line.filled-crimson { background: #B02A30; }
-    .stepper-line.filled-blue    { background: #0E6B86; }
+/* Feed */
+.feed-card{margin-top:14px;background:var(--white);border:1px solid var(--line);border-radius:var(--r-xl);overflow:hidden;box-shadow:var(--sh-card);}
+.feed-hdr{padding:16px 20px 13px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:10px;}
+.feed-hdr h3{font-size:13px;font-weight:700;color:var(--ink-700);}
+.notif-count{font-size:12px;font-weight:700;transition:color .3s;white-space:nowrap;}
+.feed-scroll{max-height:480px;overflow-y:auto;}
+.feed-empty{padding:44px 22px;text-align:center;color:var(--slate-400);font-size:14px;}
+.feed-empty svg{display:block;margin:0 auto 10px;}
+.fentry{display:grid;grid-template-columns:62px 1fr auto;gap:12px;align-items:start;padding:14px 20px;border-bottom:1px solid var(--line);border-left:3px solid transparent;transition:opacity .35s,transform .35s;}
+.fentry:last-child{border-bottom:none;}
+.fentry.fn-t1{border-left-color:var(--amber);}
+.fentry.fn-t2{border-left-color:var(--brand);}
+.fentry.fn-t3{border-left-color:var(--maroon);}
+.fentry.fn-life{border-left-color:var(--teal);}
+.fentry.fn-ok{border-left-color:var(--green);}
+.fentry.fn-silent{background:var(--surface-50);}
+.ftime{font-size:11px;font-family:var(--mono);color:var(--slate-400);padding-top:2px;}
+.flabel{font-size:13px;font-weight:700;color:var(--ink-900);}
+.fentry.fn-silent .flabel{color:var(--slate-500);font-weight:600;}
+.ftrans{font-size:11.5px;color:var(--slate-500);margin-top:3px;font-family:var(--mono);}
+.fnote{font-size:11.5px;color:var(--slate-400);margin-top:4px;font-style:italic;line-height:1.5;}
+.badge-notify{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:var(--r-pill);font-size:11px;font-weight:700;background:var(--green-bg);color:var(--green);border:1px solid rgba(22,163,74,.2);white-space:nowrap;}
+.badge-silent{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:var(--r-pill);font-size:11px;font-weight:600;background:var(--surface-100);color:var(--slate-400);border:1px solid var(--line);white-space:nowrap;}
 
-    /* ── Card ── */
-    .card {
-      background: #FFFFFF;
-      border: 1px solid #E5E7EB;
-      border-radius: 12px;
-      padding: 20px;
-      box-shadow: 0 1px 2px rgba(16,24,40,0.04), 0 4px 16px rgba(16,24,40,0.05);
-    }
+/* Raw payload console */
+.console-card{margin-top:14px;background:var(--white);border:1px solid var(--line);border-radius:var(--r-xl);overflow:hidden;box-shadow:var(--sh-card);}
+.console-card summary{padding:13px 20px;font-size:11.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--slate-400);cursor:pointer;list-style:none;user-select:none;}
+.console-card summary::-webkit-details-marker{display:none;}
+.console-card[open] summary{border-bottom:1px solid var(--line);}
+#payload-console{margin:0;background:var(--ink-900);color:#e8eaf0;font-family:var(--mono);font-size:11.5px;padding:16px 20px;overflow-x:auto;line-height:1.6;white-space:pre-wrap;word-break:break-word;}
 
-    /* ── Timeline row ── */
-    .timeline-row {
-      display: flex; align-items: flex-start; gap: 12px;
-      padding: 10px 0;
-      border-bottom: 1px solid #F1F5F9;
-    }
-    .timeline-row:last-child { border-bottom: none; }
+/* Footer */
+footer{background:var(--ink-900);padding:44px 0 36px;}
+footer .wrap{display:grid;grid-template-columns:1fr 1fr 1fr;gap:40px;}
+@media(max-width:720px){footer .wrap{grid-template-columns:1fr;gap:26px;}}
+.ft-brand p{font-size:12.5px;color:rgba(255,255,255,.3);margin-top:12px;line-height:1.65;max-width:33ch;}
+.ft-col h4{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.28);margin-bottom:13px;}
+.ft-col ul{list-style:none;display:flex;flex-direction:column;gap:9px;}
+.ft-col ul li a{color:rgba(255,255,255,.42);text-decoration:none;font-size:13px;font-weight:500;transition:color .15s;}
+.ft-col ul li a:hover{color:rgba(255,255,255,.85);}
+.ft-bottom{border-top:1px solid rgba(255,255,255,.07);margin-top:36px;padding-top:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
+.ft-bottom p{font-size:11.5px;color:rgba(255,255,255,.22);}
+.ft-tag{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:rgba(255,255,255,.18);padding:5px 11px;border:1px solid rgba(255,255,255,.08);border-radius:var(--r-pill);}
 
-    /* ── Notification card ── */
-    .notif-card {
-      background: #FAFBFC;
-      border: 1px solid #EAEEF2;
-      border-radius: 10px;
-      padding: 14px 16px;
-      margin-bottom: 10px;
-    }
-    .notif-card:last-child { margin-bottom: 0; }
-
-    /* ── Sim button ── */
-    .sim-btn {
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 8px 14px;
-      border-radius: 8px;
-      font-size: 12px; font-weight: 600; font-family: 'Space Grotesk', sans-serif;
-      cursor: pointer;
-      border: 1px solid;
-      background: #FFFFFF;
-      transition: background 0.15s, transform 0.1s, box-shadow 0.15s;
-    }
-    .sim-btn:hover  { box-shadow: 0 2px 8px rgba(16,24,40,0.08); }
-    .sim-btn:active { transform: scale(0.97); }
-    .sim-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-
-    /* ── Dashboard overlay ── */
-    #dashboard-overlay {
-      position: absolute; inset: 0;
-      background: rgba(244,245,247,0.78);
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
-      border-radius: 12px;
-      display: flex; align-items: center; justify-content: center;
-      z-index: 20;
-      transition: opacity 0.4s;
-    }
-
-    /* ── Collapsible console (visually secondary) ── */
-    #console-body {
-      max-height: 0; overflow: hidden;
-      transition: max-height 0.3s ease;
-    }
-    #console-body.open { max-height: 400px; }
-    pre { margin: 0; white-space: pre-wrap; word-break: break-all; }
-
-    /* ── Input styles ── */
-    .field-input {
-      width: 100%;
-      background: #FFFFFF;
-      border: 1px solid #D7DCE2;
-      border-radius: 8px;
-      padding: 10px 14px;
-      color: #1F2937;
-      font-family: 'Inter', sans-serif;
-      font-size: 14px;
-      outline: none;
-      transition: border-color 0.2s, box-shadow 0.2s;
-    }
-    .field-input::placeholder { color: #9AA4B2; }
-    .field-input:focus {
-      border-color: #B02A30;
-      box-shadow: 0 0 0 3px rgba(176,42,48,0.12);
-    }
-    input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; }
-
-    /* ── CTA Button ── */
-    #cta-btn {
-      width: 100%;
-      padding: 13px;
-      border-radius: 10px;
-      background: #B02A30;
-      color: #fff;
-      font-family: 'Space Grotesk', sans-serif;
-      font-weight: 600;
-      font-size: 15px;
-      letter-spacing: 0.2px;
-      border: none;
-      cursor: pointer;
-      box-shadow: 0 2px 8px rgba(176,42,48,0.20);
-      transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
-      display: flex; align-items: center; justify-content: center; gap: 10px;
-    }
-    #cta-btn:hover  { background: #8A1F24; box-shadow: 0 4px 14px rgba(176,42,48,0.28); }
-    #cta-btn:active { transform: scale(0.98); }
-    #cta-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-
-    /* ── Spinner ── */
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .spinner {
-      width: 18px; height: 18px;
-      border: 2px solid rgba(255,255,255,0.4);
-      border-top-color: #fff;
-      border-radius: 50%;
-      animation: spin 0.7s linear infinite;
-    }
-
-    /* ── State badge ── */
-    .state-badge {
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 4px 12px;
-      border-radius: 999px;
-      font-size: 12px; font-weight: 600; font-family: 'Space Grotesk', sans-serif;
-    }
-    .state-dot { width: 7px; height: 7px; border-radius: 50%; }
-
-    /* ── Trust chip ── */
-    .trust-chip {
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 5px 10px;
-      border-radius: 999px;
-      font-size: 11px; font-weight: 500;
-      background: #FFFFFF;
-      border: 1px solid #E5E7EB;
-      color: #475569;
-    }
-
-    /* Scrollbar ─ subtle */
-    ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: #D7DCE2; border-radius: 6px; }
-
-    /* ── Chip for terminal states ── */
-    .terminal-chip {
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 5px 12px;
-      border-radius: 999px;
-      font-size: 12px; font-weight: 600; font-family: 'Space Grotesk', sans-serif;
-      display: none;
-    }
-    .terminal-chip.visible { display: inline-flex; }
-
-    @media (max-width: 640px) {
-      header {
-        padding: 12px 16px;
-        gap: 12px;
-        flex-wrap: wrap;
-        align-items: center;
-      }
-      .phone-shell {
-        width: 100%;
-        border-radius: 22px;
-        padding: 40px 16px 24px;
-      }
-      .card { border-radius: 10px; padding: 16px; }
-      #flight-summary {
-        align-items: flex-start;
-        flex-direction: column;
-      }
-      #flight-summary > div:last-child {
-        width: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-      }
-      #stepper { gap: 0; }
-      .stepper-node { width: 34px; height: 34px; }
-      .stepper-line { min-width: 14px; }
-      #stepper-card .flex.justify-between.mt-2 span { font-size: 10px; }
-      #contact-strip { left: 16px; right: 16px; bottom: 12px; justify-content: center; }
-    }
-  </style>
+/* Accessibility: respect reduced-motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *{transition:none !important;animation:none !important;scroll-behavior:auto !important;}
+}
+</style>
 </head>
-<body class="font-body bg-canvas min-h-screen text-ink">
+<body>
 
-  <!-- ── Top bar ── -->
-  <header class="w-full px-6 lg:px-8 py-4 flex items-center justify-between bg-white border-b border-line">
-    <div class="flex items-center gap-3.5">
-      <div class="w-11 h-11 rounded-lg bg-primary flex items-center justify-center shrink-0">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M17.8 19.2L16 11l3.5-3.5C21 6 21 4 19.5 2.5S18 2 16.5 3.5L13 7 4.8 5.2a.5.5 0 0 0-.5.3l-.9 2.1c-.2.5 0 1 .4 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 4.2c.3.4.8.5 1.3.4l2.1-.9a.5.5 0 0 0 .3-.5Z"/>
-        </svg>
-      </div>
-      <div class="leading-none">
-        <div class="heading text-ink font-bold text-2xl tracking-tight">ICICI&nbsp;Lombard</div>
-        <div class="text-muted text-[11px] font-medium font-body mt-0.5 uppercase tracking-[0.12em]">General Insurance</div>
-        <div class="text-primary text-xs font-semibold font-body mt-1">TripSecure+ · Flight Delay Monitoring</div>
-      </div>
-    </div>
-    <div class="hidden md:flex items-center gap-2">
-      <span class="trust-chip"><span class="w-2 h-2 rounded-full bg-success"></span>Monitoring only</span>
-      <span class="trust-chip">Product 4233</span>
-      <span class="trust-chip">WhatsApp alerts enabled</span>
-      <span class="trust-chip border-secondary/40 text-secondary">Demo environment</span>
-      <a href="/live" class="trust-chip border-tertiary/40 text-tertiary hover:bg-tertiary/5">Live status lookup →</a>
-    </div>
-    <span class="md:hidden trust-chip border-secondary/40 text-secondary">Demo</span>
-  </header>
-
-  <!-- ── Main split ── -->
-  <main class="flex flex-col lg:flex-row gap-8 p-6 lg:p-10 items-start justify-center max-w-7xl mx-auto w-full">
-
-    <!-- ── LEFT: Issue form inside phone frame ── -->
-    <div class="flex flex-col items-center gap-5 w-full lg:w-auto shrink-0">
-      <div class="text-center">
-        <h2 class="heading text-ink text-2xl font-bold">Customer Portal</h2>
-        <p class="text-muted text-sm mt-1 font-body">Activate flight-delay monitoring in seconds</p>
-      </div>
-
-      <div class="phone-shell" id="issue-form">
-        <!-- Panel header -->
-        <div class="flex items-center gap-2.5 mb-5 pb-4 border-b border-line">
-          <div class="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#B02A30" stroke-width="2">
-              <path d="M20 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2Z"/><path d="m22 7-10 7L2 7"/>
-            </svg>
-          </div>
-          <div>
-            <div class="heading text-ink text-sm font-bold leading-tight">TripSecure+ Enrolment</div>
-            <div class="text-muted text-xs font-body">ICICI Lombard · Product 4233</div>
-          </div>
-        </div>
-
-        <!-- Form -->
-        <form id="policy-form" class="flex flex-col gap-4 flex-1" autocomplete="off">
-
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="text-ink/70 text-xs font-medium font-body block mb-1.5">PNR</label>
-              <input id="f-pnr" type="text" placeholder="e.g. ABC123" maxlength="10"
-                     class="field-input uppercase" required />
-            </div>
-            <div>
-              <label class="text-ink/70 text-xs font-medium font-body block mb-1.5">Flight No.</label>
-              <input id="f-flight" type="text" placeholder="e.g. AI302" maxlength="10"
-                     class="field-input uppercase" required />
-            </div>
-          </div>
-
-          <div>
-            <label class="text-ink/70 text-xs font-medium font-body block mb-1.5">Travel Date</label>
-            <input id="f-date" type="date" class="field-input" required />
-          </div>
-
-          <div>
-            <label class="text-ink/70 text-xs font-medium font-body block mb-1.5">Passenger Name</label>
-            <input id="f-name" type="text" placeholder="Full name" class="field-input" required />
-          </div>
-
-          <div>
-            <label class="text-ink/70 text-xs font-medium font-body block mb-1.5">Phone (India)</label>
-            <input id="f-phone" type="tel" placeholder="+91 98765 43210" class="field-input" required />
-          </div>
-
-          <div>
-            <label class="text-ink/70 text-xs font-medium font-body block mb-1.5">Email (optional)</label>
-            <input id="f-email" type="email" placeholder="you@example.com" class="field-input" />
-          </div>
-
-          <!-- DPDP Consent — unchecked by default, required -->
-          <div class="mt-1 rounded-lg bg-canvas border border-line p-3">
-            <label class="flex items-start gap-3 cursor-pointer group">
-              <div class="relative mt-0.5 shrink-0">
-                <input id="f-consent" type="checkbox" class="sr-only peer" />
-                <div class="w-5 h-5 rounded-md border-2 border-slate-300 bg-white peer-checked:border-primary peer-checked:bg-primary/10 group-hover:border-slate-400 transition-colors flex items-center justify-center">
-                  <svg id="check-icon" class="w-3 h-3 text-primary opacity-0 peer-checked:opacity-100 transition-opacity" fill="none" viewBox="0 0 12 12" stroke="currentColor" stroke-width="2.5">
-                    <path d="M2 6l3 3 5-5"/>
-                  </svg>
-                </div>
-              </div>
-              <span class="text-muted text-xs leading-relaxed font-body">
-                I consent to processing of my personal data for flight-delay monitoring and notifications as per the
-                <span class="text-primary font-medium underline cursor-pointer">DPDP Act §6</span>.
-                Alerts via WhatsApp / SMS / Email.
-              </span>
-            </label>
-            <p id="consent-error" class="text-primary text-xs mt-2 hidden font-body font-medium">
-              Please provide consent to continue.
-            </p>
-          </div>
-
-          <!-- CTA -->
-          <div class="mt-1">
-            <button type="submit" id="cta-btn">
-              <svg id="cta-icon" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-              </svg>
-              <span id="cta-label">Activate Monitoring</span>
-            </button>
-          </div>
-
-          <!-- Success state -->
-          <div id="form-success" class="hidden text-center py-2">
-            <div class="text-success font-semibold text-sm font-body flex items-center justify-center gap-2">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#15803D" stroke-width="2.5">
-                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
-              </svg>
-              Monitoring Activated
-            </div>
-            <div id="policy-id-display" class="text-muted text-xs mt-1 font-mono"></div>
-          </div>
-        </form>
-      </div>
-
-      <!-- Trust cues -->
-      <div class="flex flex-wrap items-center justify-center gap-2 max-w-[372px]">
-        <span class="trust-chip">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#15803D" stroke-width="2.5"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-          Customer notified on WhatsApp
-        </span>
-        <span class="trust-chip">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#0E6B86" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-          Data used only for flight monitoring
-        </span>
-      </div>
-    </div>
-
-    <!-- ── RIGHT: Dashboard ── -->
-    <div class="flex-1 min-w-0 relative" id="dashboard-wrapper">
-
-      <!-- Overlay — removed after activation -->
-      <div id="dashboard-overlay">
-        <div class="text-center px-8">
-          <div class="w-16 h-16 rounded-full bg-white border border-line flex items-center justify-center mx-auto mb-4 shadow-sm">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="1.5">
-              <path d="M22 12H2M22 12l-4-4M22 12l-4 4"/>
-              <circle cx="12" cy="12" r="10"/>
-            </svg>
-          </div>
-          <p class="heading text-ink/70 text-base font-semibold">Awaiting active policy</p>
-          <p class="text-muted text-sm mt-1 font-body">Activate monitoring on the left to begin.</p>
-        </div>
-      </div>
-
-      <div id="dashboard" class="flex flex-col gap-5" style="filter: blur(6px);">
-
-        <!-- Flight summary header -->
-        <div class="card flex items-center justify-between gap-4" id="flight-summary">
-          <div class="flex items-center gap-4">
-            <div class="w-12 h-12 rounded-xl bg-tertiary/10 flex items-center justify-center shrink-0">
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#0E6B86" stroke-width="2" stroke-linecap="round">
-                <path d="M17.8 19.2L16 11l3.5-3.5C21 6 21 4 19.5 2.5S18 2 16.5 3.5L13 7 4.8 5.2a.5.5 0 0 0-.5.3l-.9 2.1c-.2.5 0 1 .4 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 4.2c.3.4.8.5 1.3.4l2.1-.9a.5.5 0 0 0 .3-.5Z"/>
-              </svg>
-            </div>
-            <div>
-              <div class="flex items-center gap-2">
-                <span id="dash-flight" class="heading text-ink text-xl font-bold">—</span>
-                <span id="dash-date" class="text-muted text-sm font-body">—</span>
-              </div>
-              <div class="text-muted text-xs mt-0.5 font-body">
-                Scheduled: <span id="dash-scheduled" class="text-ink/70 font-medium">—</span>
-              </div>
-            </div>
-          </div>
-          <div>
-            <div id="state-badge" class="state-badge bg-slate-100 border border-line">
-              <div class="state-dot bg-slate-400"></div>
-              <span id="state-text" class="text-muted">—</span>
-            </div>
-            <div class="text-muted text-xs mt-1 text-right font-body">
-              Updated: <span id="dash-updated" class="text-ink/60">—</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Stepper -->
-        <div class="card" id="stepper-card">
-          <div class="flex items-center justify-between mb-4">
-            <h3 class="heading text-ink font-semibold text-sm">Flight Status Journey</h3>
-            <div id="terminal-chip-container" class="flex gap-2">
-              <div id="chip-cancelled" class="terminal-chip bg-primary/10 border border-primary/30 text-primary">
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                CANCELLED
-              </div>
-              <div id="chip-diverted" class="terminal-chip bg-secondary/10 border border-secondary/30 text-secondary">
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"/></svg>
-                DIVERTED
-              </div>
-            </div>
-          </div>
-          <div id="stepper" class="flex items-center gap-1">
-            <!-- Injected by JS -->
-          </div>
-          <div class="flex justify-between mt-2 px-1">
-            <span class="text-muted text-xs font-body">Registered</span>
-            <span class="text-muted text-xs font-body">On-Time</span>
-            <span class="text-muted text-xs font-body">Delayed</span>
-            <span class="text-muted text-xs font-body">Departed</span>
-            <span class="text-muted text-xs font-body">Landed</span>
-          </div>
-        </div>
-
-        <!-- Demo event controls (secondary) -->
-        <div class="card" id="sim-controls" style="background:#FBFCFD; border-style:dashed;">
-          <div class="flex items-center justify-between mb-1">
-            <h3 class="heading text-ink/80 font-semibold text-sm">Demo Event Controls</h3>
-            <span class="trust-chip border-secondary/40 text-secondary">Demo only</span>
-          </div>
-          <p class="text-muted text-xs mb-4 font-body">Trigger a synthetic flight event to see how the customer is notified.</p>
-          <div class="flex flex-wrap gap-2">
-            <button class="sim-btn border-secondary/50 text-secondary" data-event="delay_t1">Delay +45m</button>
-            <button class="sim-btn border-secondary/60 text-secondary" data-event="delay_t2">Delay +90m</button>
-            <button class="sim-btn border-primary/50  text-primary"     data-event="delay_t3">Delay +150m</button>
-            <button class="sim-btn border-success/50  text-success"     data-event="recover">Recover</button>
-            <button class="sim-btn border-tertiary/50 text-tertiary"    data-event="depart">Depart</button>
-            <button class="sim-btn border-tertiary/60 text-tertiary"    data-event="land">Land</button>
-            <button class="sim-btn border-primary/60  text-primary"     data-event="cancel">Cancel</button>
-            <button class="sim-btn border-secondary/50 text-secondary"  data-event="divert">Divert</button>
-          </div>
-        </div>
-
-        <!-- Timeline -->
-        <div class="card" id="timeline-card">
-          <h3 class="heading text-ink font-semibold text-sm mb-3">Event Timeline</h3>
-          <div id="timeline" class="divide-y divide-slate-100">
-            <div data-placeholder class="flex flex-col items-center text-center py-8 px-4">
-              <div class="w-11 h-11 rounded-full bg-slate-50 border border-line flex items-center justify-center mb-3">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
-              </div>
-              <p class="text-ink/70 text-sm font-medium font-body">No flight events yet</p>
-              <p class="text-muted text-xs mt-1 font-body max-w-[260px]">Use the demo controls above to simulate a status update.</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Notifications -->
-        <div class="card" id="notifications-card">
-          <div class="flex items-center justify-between mb-1">
-            <h3 class="heading text-ink font-semibold text-sm">Customer Notifications</h3>
-          </div>
-          <p class="text-muted text-xs mb-3 font-body">No payout or claim decision is made in this demo.</p>
-          <div id="notifications">
-            <div data-placeholder class="flex flex-col items-center text-center py-8 px-4">
-              <div class="w-11 h-11 rounded-full bg-slate-50 border border-line flex items-center justify-center mb-3">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="1.8"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-              </div>
-              <p class="text-ink/70 text-sm font-medium font-body">No customer notifications yet</p>
-              <p class="text-muted text-xs mt-1 font-body max-w-[280px]">Customer notifications will appear here after a notifiable event.</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Technical response console (collapsible, secondary) -->
-        <div class="card" id="payload-console" style="background:#FBFCFD;">
-          <button id="console-toggle"
-                  class="w-full flex items-center justify-between heading text-muted text-xs font-semibold hover:text-ink transition-colors">
-            <span class="flex items-center gap-2">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/>
-              </svg>
-              Technical Response Console
-            </span>
-            <svg id="console-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="transition-transform">
-              <polyline points="6 9 12 15 18 9"/>
-            </svg>
-          </button>
-          <div id="console-body">
-            <div class="mt-4 rounded-lg bg-slate-900 border border-slate-800 p-4 overflow-y-auto max-h-64">
-              <pre id="console-pre" class="text-xs text-emerald-300 font-mono leading-relaxed">// Trigger an event to see the API response payload here</pre>
-            </div>
-          </div>
-        </div>
-
-      </div><!-- /#dashboard -->
-    </div><!-- /#dashboard-wrapper -->
-  </main>
-
-  <!-- Contact info strip -->
-  <div id="contact-strip" class="hidden fixed bottom-4 right-4 card py-3 px-5 flex items-center gap-3 z-30">
-    <div class="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#B02A30" stroke-width="2.5">
-        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-      </svg>
-    </div>
-    <div>
-      <div class="text-ink font-semibold text-sm font-body" id="strip-name">—</div>
-      <div class="text-muted text-xs font-mono" id="strip-phone">—</div>
+<!-- NAV -->
+<nav class="topbar">
+  <div class="wrap">
+    <a href="/landing" class="nav-brand">
+      <img src="/static/assets/logo.svg" alt="TripSecure+" class="nav-logo">
+      <div class="nav-divider"></div>
+      <div class="nav-client">ICICI Lombard<span>Product 4233</span></div>
+    </a>
+    <div class="nav-pages">
+      <a href="/" class="nav-pg active">Simulator</a>
+      <a href="/live" class="nav-pg">Multi-vendor</a>
     </div>
   </div>
+</nav>
 
-  <script>
-    /* ── Bootstrap ── */
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+<!-- INTRO -->
+<section class="intro">
+  <div class="wrap">
+    <div class="eyebrow">Decision brain · live demo</div>
+    <h1>Only material changes notify the customer.</h1>
+    <p>Issue a policy on a flight, then fire events — the real brain decides what crosses a threshold. Tier escalations, recoveries, and lifecycle transitions trigger notifications. Everything else is logged silently. Every decision below comes from the live backend.</p>
+  </div>
+</section>
 
-    /* ── State ── */
-    let policyId      = null;
-    let pollTimer     = null;
-    const seenTimeline = new Set();
-    const seenNotifs   = new Set();
-
-    /* ── DOM refs ── */
-    const form           = document.getElementById('policy-form');
-    const ctaBtn         = document.getElementById('cta-btn');
-    const ctaLabel       = document.getElementById('cta-label');
-    const formSuccess    = document.getElementById('form-success');
-    const policyDisplay  = document.getElementById('policy-id-display');
-    const consentInput   = document.getElementById('f-consent');
-    const checkIcon      = document.getElementById('check-icon');
-    const consentError   = document.getElementById('consent-error');
-    const dashboard      = document.getElementById('dashboard');
-    const overlay        = document.getElementById('dashboard-overlay');
-    const stepperEl      = document.getElementById('stepper');
-    const timelineEl     = document.getElementById('timeline');
-    const notifsEl       = document.getElementById('notifications');
-    const consolePre     = document.getElementById('console-pre');
-    const consoleBody    = document.getElementById('console-body');
-    const consoleChevron = document.getElementById('console-chevron');
-    const chipCancelled  = document.getElementById('chip-cancelled');
-    const chipDiverted   = document.getElementById('chip-diverted');
-
-    /* ── Consent checkbox visual sync ── */
-    consentInput.addEventListener('change', () => {
-      checkIcon.style.opacity = consentInput.checked ? '1' : '0';
-      if (consentInput.checked) consentError.classList.add('hidden');
-    });
-
-    /* ── Console toggle ── */
-    document.getElementById('console-toggle').addEventListener('click', () => {
-      consoleBody.classList.toggle('open');
-      const open = consoleBody.classList.contains('open');
-      consoleChevron.style.transform = open ? 'rotate(180deg)' : 'rotate(0deg)';
-    });
-
-    /* ── Stepper config ── */
-    const STEPPER_NODES = [
-      { id: 'REGISTERED', icon: '●', label: 'R' },
-      { id: 'ON_TIME',    icon: '✓', label: 'OT' },
-      { id: 'DELAYED',    icon: '!', label: 'D' },  // virtual — maps T1/T2/T3
-      { id: 'DEPARTED',   icon: '↑', label: '→' },
-      { id: 'LANDED',     icon: '✓', label: '↓' },
-    ];
-
-    /* Build stepper DOM once */
-    STEPPER_NODES.forEach((node, i) => {
-      const el = document.createElement('div');
-      el.id = `snode-${node.id}`;
-      el.className = 'stepper-node';
-      el.innerHTML = node.icon;
-      el.setAttribute('data-node', node.id);
-      stepperEl.appendChild(el);
-
-      if (i < STEPPER_NODES.length - 1) {
-        const line = document.createElement('div');
-        line.id = `sline-${i}`;
-        line.className = 'stepper-line';
-        stepperEl.appendChild(line);
-      }
-    });
-
-    /* ── Map state → stepper highlight ── */
-    const STATE_NODE_MAP = {
-      REGISTERED: 'REGISTERED',
-      ON_TIME:    'ON_TIME',
-      DELAYED_T1: 'DELAYED',
-      DELAYED_T2: 'DELAYED',
-      DELAYED_T3: 'DELAYED',
-      DEPARTED:   'DEPARTED',
-      LANDED:     'LANDED',
-      CANCELLED:  null,
-      DIVERTED:   null,
-      CLOSED:     'LANDED',
-    };
-
-    function stateToNodeColor(state) {
-      if (['REGISTERED','ON_TIME'].includes(state))           return 'emerald';
-      if (['DELAYED_T1','DELAYED_T2'].includes(state))        return 'orange';
-      if (state === 'DELAYED_T3')                             return 'crimson';
-      if (['DEPARTED','LANDED','CLOSED'].includes(state))     return 'blue';
-      return 'emerald';
-    }
-
-    let lastActiveNode = null;
-
-    function updateStepper(state) {
-      const targetNode = STATE_NODE_MAP[state] || null;
-      const color      = stateToNodeColor(state);
-
-      // Remove all active classes
-      STEPPER_NODES.forEach(n => {
-        const el = document.getElementById(`snode-${n.id}`);
-        el.className = 'stepper-node';
-      });
-
-      // Show/hide terminal chips
-      chipCancelled.classList.toggle('visible', state === 'CANCELLED');
-      chipDiverted.classList.toggle('visible',  state === 'DIVERTED');
-
-      if (!targetNode) return;
-
-      const activeEl = document.getElementById(`snode-${targetNode}`);
-      activeEl.className = `stepper-node active-${color} pulse-${color}`;
-
-      // One-shot subtle pop only when state changed
-      if (targetNode !== lastActiveNode && !reduce && window.gsap) {
-        gsap.fromTo(activeEl,
-          { scale: 1 },
-          { scale: 1.12, yoyo: true, repeat: 1, duration: 0.22, ease: 'power2.out' }
-        );
-      }
-      lastActiveNode = targetNode;
-
-      // Fill connector lines up to active node
-      const nodeOrder = STEPPER_NODES.map(n => n.id);
-      const activeIdx = nodeOrder.indexOf(targetNode);
-      for (let i = 0; i < STEPPER_NODES.length - 1; i++) {
-        const line = document.getElementById(`sline-${i}`);
-        line.className = i < activeIdx ? `stepper-line filled-${color}` : 'stepper-line';
-      }
-    }
-
-    /* ── State badge ── */
-    const BADGE_STYLES = {
-      REGISTERED: { bg: 'bg-slate-100',     border: 'border-line',          dot: 'bg-slate-400',  text: 'text-muted' },
-      ON_TIME:    { bg: 'bg-success/10',    border: 'border-success/30',    dot: 'bg-success',    text: 'text-success' },
-      DELAYED_T1: { bg: 'bg-secondary/10',  border: 'border-secondary/30',  dot: 'bg-secondary',  text: 'text-secondary' },
-      DELAYED_T2: { bg: 'bg-secondary/10',  border: 'border-secondary/40',  dot: 'bg-secondary',  text: 'text-secondary' },
-      DELAYED_T3: { bg: 'bg-primary/10',    border: 'border-primary/40',    dot: 'bg-primary',    text: 'text-primary' },
-      DEPARTED:   { bg: 'bg-tertiary/10',   border: 'border-tertiary/30',   dot: 'bg-tertiary',   text: 'text-tertiary' },
-      LANDED:     { bg: 'bg-tertiary/10',   border: 'border-tertiary/40',   dot: 'bg-tertiary',   text: 'text-tertiary' },
-      CANCELLED:  { bg: 'bg-primary/10',    border: 'border-primary/40',    dot: 'bg-primary',    text: 'text-primary' },
-      DIVERTED:   { bg: 'bg-secondary/10',  border: 'border-secondary/40',  dot: 'bg-secondary',  text: 'text-secondary' },
-      CLOSED:     { bg: 'bg-slate-100',     border: 'border-line',          dot: 'bg-slate-400',  text: 'text-muted' },
-    };
-
-    function updateStateBadge(state) {
-      const badgeEl  = document.getElementById('state-badge');
-      const textEl   = document.getElementById('state-text');
-      const s        = BADGE_STYLES[state] || BADGE_STYLES['REGISTERED'];
-      const dotEl    = badgeEl.querySelector('.state-dot');
-
-      badgeEl.className  = `state-badge border ${s.bg} ${s.border}`;
-      dotEl.className    = `state-dot ${s.dot}`;
-      textEl.className   = s.text;
-      textEl.textContent = state.replace(/_/g, ' ');
-    }
-
-    /* ── Dashboard reveal animation (clean fade/slide) ── */
-    function revealDashboard() {
-      document.getElementById('contact-strip').classList.remove('hidden');
-
-      if (reduce || !window.gsap) {
-        overlay.style.display  = 'none';
-        dashboard.style.filter = 'none';
-        animateNewCards();
-        return;
-      }
-
-      const tl = gsap.timeline({ onComplete: animateNewCards });
-      tl.to(overlay, {
-        opacity: 0, duration: 0.4, ease: 'power2.out',
-        onComplete: () => { overlay.style.display = 'none'; }
-      });
-      tl.to(dashboard, {
-        filter: 'blur(0px)', duration: 0.4, ease: 'power2.out',
-      }, '-=0.25');
-    }
-
-    /* ── Animate dashboard cards in (diff-based) ── */
-    function animateNewCards() {
-      dashboard.style.filter = 'none';
-      if (reduce || !window.gsap) return;
-      const cards = [
-        document.getElementById('flight-summary'),
-        document.getElementById('stepper-card'),
-        document.getElementById('sim-controls'),
-        document.getElementById('timeline-card'),
-        document.getElementById('notifications-card'),
-        document.getElementById('payload-console'),
-      ];
-      gsap.from(cards, {
-        opacity: 0,
-        y: 18,
-        duration: 0.45,
-        stagger: 0.07,
-        ease: 'power2.out',
-        clearProps: 'all',
-      });
-    }
-
-    /* ── Timeline render (diff-based) ── */
-    const STATE_COLORS = {
-      REGISTERED: '#64748B', ON_TIME: '#15803D',
-      DELAYED_T1: '#E8740C', DELAYED_T2: '#E8740C',
-      DELAYED_T3: '#B02A30', CANCELLED: '#B02A30',
-      DEPARTED: '#0E6B86', LANDED: '#0E6B86',
-      DIVERTED: '#E8740C', CLOSED: '#64748B',
-    };
-
-    function formatTs(iso) {
-      if (!iso) return '—';
-      try {
-        const d = new Date(iso);
-        return d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-      } catch { return iso; }
-    }
-
-    function renderTimeline(events) {
-      const placeholder = timelineEl.querySelector('[data-placeholder]');
-      if (placeholder && events && events.length) placeholder.remove();
-      if (!events || events.length === 0) {
-        if (!timelineEl.querySelector('.timeline-row') && !timelineEl.querySelector('[data-placeholder]')) {
-          timelineEl.innerHTML = '<div data-placeholder class="text-muted text-sm py-4 text-center font-body">No events yet — trigger one above.</div>';
-        }
-        return;
-      }
-
-      const newRows = [];
-      events.forEach((ev) => {
-        const key = `${ev.ts}|${ev.new_state}`;
-        if (seenTimeline.has(key)) return;
-        seenTimeline.add(key);
-
-        const row = document.createElement('div');
-        row.className = 'timeline-row';
-        row.style.opacity = '0';
-        row.dataset.key = key;
-
-        const color = STATE_COLORS[ev.new_state] || '#64748B';
-        const prevColor = STATE_COLORS[ev.prev_state] || '#64748B';
-
-        row.innerHTML = `
-          <div class="flex flex-col items-center gap-1 shrink-0 mt-1" style="min-width:28px">
-            <div class="w-2.5 h-2.5 rounded-full" style="background:${color}"></div>
-            <div class="w-px flex-1 min-h-[16px]" style="background:linear-gradient(${color}55, transparent)"></div>
+<!-- ISSUE POLICY -->
+<div class="lookup-bar">
+  <div class="wrap">
+    <form id="issue-form" autocomplete="off">
+      <div class="issue-grid">
+        <div class="field-card">
+          <h4>Flight</h4>
+          <div class="field-row">
+            <div class="lf-group" style="flex:1.2;"><label class="lf-label">Flight number</label>
+              <input class="lf-input lf-code" id="input-flight" value="AI302" maxlength="8" placeholder="AI302" spellcheck="false" required></div>
+            <div class="lf-group" style="max-width:74px;"><label class="lf-label">From</label>
+              <input class="lf-input lf-code" id="input-origin" value="BOM" maxlength="4" placeholder="BOM" spellcheck="false"></div>
+            <div class="lf-group" style="max-width:74px;"><label class="lf-label">To</label>
+              <input class="lf-input lf-code" id="input-dest" value="DEL" maxlength="4" placeholder="DEL" spellcheck="false"></div>
+            <div class="lf-group"><label class="lf-label">Date</label>
+              <input class="lf-input" id="input-date" type="date" required></div>
           </div>
-          <div class="flex-1 pb-2">
-            <div class="flex items-center gap-2 flex-wrap">
-              <span class="text-muted text-xs font-mono">${formatTs(ev.ts)}</span>
-              <span class="text-xs font-semibold font-body" style="color:${color}">${(ev.new_state||'—').replace(/_/g,' ')}</span>
-              ${ev.notified ? '<span class="text-xs" title="Customer notified">🔔</span>' : ''}
+        </div>
+        <div class="field-card">
+          <h4>Policyholder <span style="color:var(--slate-400);font-weight:600;text-transform:none;letter-spacing:0;">· stored only in the isolated PII table (DPDP)</span></h4>
+          <div class="field-row">
+            <div class="lf-group" style="max-width:110px;"><label class="lf-label">PNR</label>
+              <input class="lf-input lf-code" id="input-pnr" value="TSPDEMO" maxlength="10" placeholder="ABC123" spellcheck="false" required></div>
+            <div class="lf-group"><label class="lf-label">Name</label>
+              <input class="lf-input" id="input-name" value="Demo Passenger" placeholder="Full name" required></div>
+            <div class="lf-group"><label class="lf-label">Phone</label>
+              <input class="lf-input" id="input-phone" value="+919999999999" placeholder="+9198…" required></div>
+            <div class="lf-group"><label class="lf-label">Email <span style="text-transform:none;font-weight:500;">(optional)</span></label>
+              <input class="lf-input" id="input-email" type="email" placeholder="name@example.com"></div>
+          </div>
+        </div>
+      </div>
+      <div class="issue-foot">
+        <label class="consent">
+          <input type="checkbox" id="input-consent">
+          <span>I <b>consent</b> to processing of the above personal data for flight-delay monitoring and notifications, per the TripSecure+ privacy notice (<b>DPDP Act §6</b> — affirmative opt-in).</span>
+        </label>
+        <button type="submit" class="lf-btn" id="issue-btn">Issue policy</button>
+      </div>
+      <p class="lookup-note" id="lookup-note">Tick consent, then issue a policy to begin monitoring.</p>
+    </form>
+  </div>
+</div>
+
+<!-- SIMULATOR -->
+<div class="sim-outer">
+  <div class="wrap">
+    <div class="sim-layout">
+
+      <!-- LEFT: flight card -->
+      <div>
+        <div class="flight-card" id="dashboard">
+          <div class="fc-eyebrow">Active policy</div>
+          <div class="fc-route">
+            <span class="fc-iata" id="fc-origin">BOM</span>
+            <span class="fc-line">
+              <span class="fc-plane">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21 4 19.5 2.5S18 2 16.5 3.5L13 7 4.8 5.2a.5.5 0 0 0-.5.3l-.9 2.1c-.2.5 0 1 .4 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 4.2c.3.4.8.5 1.3.4l2.1-.9a.5.5 0 0 0 .3-.5Z"/></svg>
+              </span>
+            </span>
+            <span class="fc-iata" id="fc-dest">DEL</span>
+          </div>
+          <div class="fc-meta" id="fc-meta">No policy issued yet</div>
+          <div id="state-badge" class="state-badge">
+            <span id="state-dot" class="state-dot"></span>
+            <span id="state-label">Awaiting issuance</span>
+          </div>
+          <div class="fc-divider"></div>
+          <div class="step-track" id="stepper"></div>
+        </div>
+        <div class="brain-cfg" id="brain-cfg">Loading thresholds…</div>
+      </div>
+
+      <!-- RIGHT: controls + feed -->
+      <div id="sim-controls">
+        <div class="controls-card">
+          <div class="ctrl-head">Fire flight events <span class="ctrl-hint" id="ctrl-hint">issue a policy first</span></div>
+          <div class="btn-groups">
+            <div class="btn-grp">
+              <span class="grp-label">Delay escalation</span>
+              <button class="ev-btn btn-amber"  data-ev="delay_t1" disabled>Delay +45 min</button>
+              <button class="ev-btn btn-orange" data-ev="delay_t2" disabled>Delay +90 min</button>
+              <button class="ev-btn btn-ghost"  data-ev="wobble"   disabled title="Re-sends a Tier-2 delay — same tier, so the brain logs it silently">Wobble (same tier)</button>
+              <button class="ev-btn btn-red"    data-ev="delay_t3" disabled>Delay +150 min</button>
             </div>
-            <div class="text-muted text-xs mt-0.5 font-body">
-              <span style="color:${prevColor}">${(ev.prev_state||'—').replace(/_/g,' ')}</span>
-              <span class="mx-1 text-slate-300">→</span>
-              <span style="color:${color}">${(ev.new_state||'—').replace(/_/g,' ')}</span>
-              ${ev.event_type ? `<span class="ml-2 text-slate-400">· ${ev.event_type.replace(/_/g,' ')}</span>` : ''}
+            <div class="btn-grp">
+              <span class="grp-label">Recovery &amp; lifecycle</span>
+              <button class="ev-btn btn-green" data-ev="recover" disabled>Back on schedule</button>
+              <button class="ev-btn btn-teal"  data-ev="depart"  disabled>Departed</button>
+              <button class="ev-btn btn-teal"  data-ev="land"    disabled>Landed</button>
+              <button class="ev-btn btn-ghost" data-ev="cancel"  disabled>Cancel</button>
+              <button class="ev-btn btn-ghost" data-ev="divert"  disabled>Divert</button>
+            </div>
+            <div class="btn-grp">
+              <button class="ev-btn btn-reset" id="reset-btn">↺ Reset — issue a new policy</button>
             </div>
           </div>
-        `;
+        </div>
 
-        timelineEl.insertBefore(row, timelineEl.firstChild);
-        newRows.push(row);
-      });
-
-      if (newRows.length > 0 && !reduce && window.gsap) {
-        gsap.fromTo(newRows,
-          { opacity: 0, y: 6 },
-          { opacity: 1, y: 0, duration: 0.4, stagger: 0.06, ease: 'power2.out' }
-        );
-      } else {
-        newRows.forEach(r => { r.style.opacity = '1'; });
-      }
-    }
-
-    /* ── Notifications render (diff-based) ── */
-    const CHANNEL_ICONS = {
-      sms:       `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`,
-      whatsapp:  `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>`,
-      email:     `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>`,
-    };
-
-    function renderNotifications(notifs, contact) {
-      const placeholder = notifsEl.querySelector('[data-placeholder]');
-      if (placeholder && notifs && notifs.length) placeholder.remove();
-      if (!notifs || notifs.length === 0) {
-        if (!notifsEl.querySelector('.notif-card') && !notifsEl.querySelector('[data-placeholder]')) {
-          notifsEl.innerHTML = '<div data-placeholder class="text-muted text-sm py-2 text-center font-body">No notifications yet.</div>';
-        }
-        return;
-      }
-
-      const newCards = [];
-      [...notifs].reverse().forEach(n => {
-        const key = `${n.sent_ts}|${n.channel}|${(n.body||'').slice(0,40)}`;
-        if (seenNotifs.has(key)) return;
-        seenNotifs.add(key);
-
-        const card = document.createElement('div');
-        card.className = 'notif-card';
-        card.style.opacity = '0';
-
-        const icon = CHANNEL_ICONS[n.channel?.toLowerCase()] || CHANNEL_ICONS['sms'];
-        const statusColor = n.status === 'sent' ? '#15803D' : '#E8740C';
-
-        card.innerHTML = `
-          <div class="flex items-start gap-3">
-            <div class="w-8 h-8 rounded-full bg-white border border-line flex items-center justify-center shrink-0 text-tertiary mt-0.5">
-              ${icon}
-            </div>
-            <div class="flex-1 min-w-0">
-              <div class="flex items-center gap-2 mb-1">
-                <span class="text-ink/70 text-xs font-semibold font-body uppercase tracking-wider">${n.channel || '—'}</span>
-                <span class="text-xs px-2 py-0.5 rounded-full font-medium" style="background:${statusColor}1a; color:${statusColor}; border:1px solid ${statusColor}33">${n.status || '—'}</span>
-                <span class="text-slate-400 text-xs font-mono ml-auto shrink-0">${formatTs(n.sent_ts)}</span>
-              </div>
-              <p class="text-ink/70 text-xs leading-relaxed font-body">${n.body || '—'}</p>
-              ${contact ? `<div class="text-slate-400 text-xs mt-1 font-mono">${contact.name || ''} · ${contact.phone_masked || ''}</div>` : ''}
+        <div class="feed-card">
+          <div class="feed-hdr">
+            <h3>Decision log <span style="font-weight:500;color:var(--slate-400);">· from GET /policies/{id}</span></h3>
+            <span class="notif-count" id="notifications">0 notifications sent</span>
+          </div>
+          <div class="feed-scroll" id="timeline">
+            <div class="feed-empty" id="feed-empty">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--slate-400)"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+              Issue a policy, then fire an event to see the brain's real decision.
             </div>
           </div>
-        `;
+        </div>
 
-        notifsEl.insertBefore(card, notifsEl.firstChild);
-        newCards.push(card);
-      });
+        <details class="console-card">
+          <summary>▸ Raw synthetic webhook payload (last event)</summary>
+          <pre id="payload-console">No event fired yet.</pre>
+        </details>
+      </div>
 
-      if (newCards.length > 0 && !reduce && window.gsap) {
-        gsap.fromTo(newCards,
-          { opacity: 0, y: 6 },
-          { opacity: 1, y: 0, duration: 0.4, stagger: 0.07, ease: 'power2.out' });
-      } else {
-        newCards.forEach(c => { c.style.opacity = '1'; });
-      }
-    }
+    </div>
+  </div>
+</div>
 
-    /* ── Refresh from API ── */
-    async function refresh() {
-      if (!policyId) return;
-      try {
-        const res = await fetch(`/policies/${policyId}`);
-        if (!res.ok) return;
-        const data = await res.json();
+<!-- FOOTER -->
+<footer>
+  <div class="wrap">
+    <div class="ft-brand">
+      <div style="display:flex;align-items:center;gap:11px;margin-bottom:11px;">
+        <div style="width:34px;height:34px;border-radius:9px;background:rgba(255,255,255,.09);display:flex;align-items:center;justify-content:center;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round"><path d="M17.8 19.2L16 11l3.5-3.5C21 6 21 4 19.5 2.5S18 2 16.5 3.5L13 7 4.8 5.2a.5.5 0 0 0-.5.3l-.9 2.1c-.2.5 0 1 .4 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 4.2c.3.4.8.5 1.3.4l2.1-.9a.5.5 0 0 0 .3-.5Z"/></svg>
+        </div>
+        <div>
+          <div style="font-size:15px;font-weight:800;color:#fff;letter-spacing:-.02em;">TripSecure+</div>
+          <div style="font-size:10px;font-weight:600;color:rgba(255,255,255,.3);letter-spacing:.05em;text-transform:uppercase;">ICICI Lombard · Product 4233</div>
+        </div>
+      </div>
+      <p>Flight delay monitoring &amp; notification. No money is moved; this service only monitors and alerts. DPDP Act §6 compliant.</p>
+    </div>
+    <div class="ft-col">
+      <h4>Demo pages</h4>
+      <ul>
+        <li><a href="/">Decision brain simulator</a></li>
+        <li><a href="/live">Multi-vendor reconciliation</a></li>
+        <li><a href="/landing">Product overview</a></li>
+      </ul>
+    </div>
+    <div class="ft-col">
+      <h4>Legal &amp; data</h4>
+      <ul>
+        <li><a href="#">DPDP Act §6 consent</a></li>
+        <li><a href="#">PII isolation policy</a></li>
+        <li><a href="#">ICICI Lombard terms</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="wrap">
+    <div class="ft-bottom">
+      <p>© 2026 ICICI Lombard General Insurance Co. Ltd. · TripSecure+ is a registered product.</p>
+      <span class="ft-tag">Monitoring only · Phase 1</span>
+    </div>
+  </div>
+</footer>
 
-        document.getElementById('dash-flight').textContent    = data.flight_number || '—';
-        document.getElementById('dash-date').textContent      = data.flight_date   || '—';
-        document.getElementById('dash-scheduled').textContent = data.scheduled_in_utc
-          ? new Date(data.scheduled_in_utc).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC' }) + ' UTC'
-          : '—';
-        document.getElementById('dash-updated').textContent   = formatTs(data.last_update_ts);
+<script>
+/* ============================================================
+   Real wiring — every decision comes from the backend:
+     POST /policies        → issue a monitored policy
+     POST /demo/simulate   → fire a synthetic flight event
+     GET  /policies/{id}    → read state + decision timeline + notifications
+   The brain lives server-side; this page only renders its output.
+   ============================================================ */
 
-        updateStateBadge(data.current_state || 'REGISTERED');
-        updateStepper(data.current_state || 'REGISTERED');
-        renderTimeline(data.timeline || []);
-        renderNotifications(data.notifications || [], data.contact);
+const TERMINAL = new Set(['LANDED','CANCELLED','CLOSED']);  // DIVERTED can still land → not terminal
 
-        if (data.contact) {
-          document.getElementById('strip-name').textContent  = data.contact.name        || '—';
-          document.getElementById('strip-phone').textContent = data.contact.phone_masked || '—';
-        }
-      } catch (e) {
-        console.error('[refresh]', e);
-      }
-    }
+/* data-ev → real backend event (VALID_EVENTS). "wobble" re-fires delay_t2:
+   same tier, no new crossing → the brain logs it silently (the lesson). */
+const EVENT_MAP = {
+  delay_t1:'delay_t1', delay_t2:'delay_t2', wobble:'delay_t2', delay_t3:'delay_t3',
+  recover:'recover', depart:'depart', land:'land', cancel:'cancel', divert:'divert',
+};
 
-    /* ── Poll ── */
-    function startPolling() {
-      if (pollTimer) clearInterval(pollTimer);
-      pollTimer = setInterval(refresh, 2000);
-    }
+const STATE_LABEL = {
+  REGISTERED:'Registered', ON_TIME:'On time', DELAYED_T1:'Delayed T1', DELAYED_T2:'Delayed T2',
+  DELAYED_T3:'Delayed T3', DEPARTED:'Departed', LANDED:'Landed', CANCELLED:'Cancelled',
+  DIVERTED:'Diverted', CLOSED:'Closed',
+};
+const SS = {
+  REGISTERED:{c:'var(--slate-500)',bg:'var(--surface-100)',d:'var(--slate-400)',b:'var(--line-strong)'},
+  ON_TIME:   {c:'var(--green)',    bg:'var(--green-bg)', d:'var(--green-dot)',b:'rgba(22,163,74,.25)'},
+  DELAYED_T1:{c:'var(--amber-ink)',bg:'var(--amber-bg)', d:'var(--amber)',   b:'rgba(243,154,11,.3)'},
+  DELAYED_T2:{c:'var(--brand)',    bg:'var(--o-50)',     d:'var(--brand)',   b:'rgba(232,89,12,.3)'},
+  DELAYED_T3:{c:'var(--maroon)',   bg:'var(--maroon-bg)',d:'var(--maroon)',  b:'rgba(176,42,48,.3)'},
+  DEPARTED:  {c:'var(--teal)',     bg:'var(--teal-bg)',  d:'var(--teal)',    b:'rgba(14,107,134,.3)'},
+  LANDED:    {c:'var(--teal)',     bg:'var(--teal-bg)',  d:'var(--teal)',    b:'rgba(14,107,134,.3)'},
+  CANCELLED: {c:'var(--maroon)',   bg:'var(--maroon-bg)',d:'var(--maroon)',  b:'rgba(176,42,48,.3)'},
+  DIVERTED:  {c:'var(--brand)',    bg:'var(--o-50)',     d:'var(--brand)',   b:'rgba(232,89,12,.3)'},
+  CLOSED:    {c:'var(--slate-500)',bg:'var(--surface-100)',d:'var(--slate-400)',b:'var(--line-strong)'},
+};
+const STEPS=[
+  {id:'ON_TIME',   l:'On time',   s:'Scheduled'},
+  {id:'DELAYED_T1',l:'Delayed T1',s:'Tier 1'},
+  {id:'DELAYED_T2',l:'Delayed T2',s:'Tier 2'},
+  {id:'DELAYED_T3',l:'Delayed T3',s:'Tier 3'},
+  {id:'DEPARTED',  l:'Departed',  s:'Airborne'},
+  {id:'LANDED',    l:'Landed',    s:'Gate arrival'},
+];
 
-    /* ── Form submit ── */
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
+/* Human label + note derived from the brain's event_type (presentational only —
+   the notify/silent decision and the state itself come from the backend). */
+const EVENT_TEXT = {
+  MONITORING_ACTIVE:{l:'Policy issued — monitoring active', n:'Baseline snapshot captured. The flight is enrolled and being watched.'},
+  DELAY_TIER_1:{l:'Delay crossed Tier 1', n:'Delay crossed the Tier-1 threshold — new tier, customer notified.'},
+  DELAY_TIER_2:{l:'Delay crossed Tier 2', n:'Delay crossed the Tier-2 threshold — new tier, customer notified.'},
+  DELAY_TIER_3:{l:'Delay crossed Tier 3', n:'Delay crossed the Tier-3 threshold — new tier, customer notified.'},
+  BACK_ON_SCHEDULE:{l:'Back on schedule', n:'Delay fell below the recovery threshold — back on schedule, customer notified.'},
+  DEPARTED:{l:'Departed', n:'First departure event — customer notified with the updated ETA.'},
+  LANDED:{l:'Landed — gate arrival', n:'Gate arrival confirmed (chocks-on). Monitoring closes.'},
+  CANCELLED:{l:'Cancelled', n:'Flight cancelled — customer notified immediately.'},
+  DIVERTED:{l:'Diverted', n:'Flight diverted — customer notified immediately (may still land).'},
+  NONE:{l:'No material change', n:'No threshold crossed. Event logged silently.'},
+};
 
-      if (!consentInput.checked) {
-        consentError.classList.remove('hidden');
-        return;
-      }
-      consentError.classList.add('hidden');
+let policyId = null;
+const $ = (id) => document.getElementById(id);
+const noteEl = $('lookup-note');
 
-      ctaBtn.disabled = true;
-      const ctaIcon = document.getElementById('cta-icon');
-      if (ctaIcon) ctaIcon.style.display = 'none';
-      ctaLabel.innerHTML = '<div class="spinner"></div><span>Processing…</span>';
+function fmtTime(iso){
+  if(!iso) return '—';
+  try { return new Date(iso).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',timeZone:'Asia/Kolkata'})+' IST'; }
+  catch { return iso; }
+}
+function lbl(s){ return STATE_LABEL[s]||s; }
 
-      const body = {
-        pnr:           document.getElementById('f-pnr').value.trim().toUpperCase(),
-        flight_number: document.getElementById('f-flight').value.trim().toUpperCase(),
-        flight_date:   document.getElementById('f-date').value,
-        name:          document.getElementById('f-name').value.trim(),
-        phone:         document.getElementById('f-phone').value.trim(),
-        consent:       true,
-      };
-      const email = document.getElementById('f-email').value.trim();
-      if (email) body.email = email;
+function updateBadge(s){
+  const ss=SS[s]||SS.REGISTERED, b=$('state-badge');
+  b.style.cssText=`background:${ss.bg};color:${ss.c};border:1px solid ${ss.b};`;
+  $('state-dot').style.background=ss.d;
+  $('state-label').textContent=lbl(s);
+  b.style.transform='scale(1.06)'; setTimeout(()=>{b.style.transform='';},220);
+}
+function buildTrack(s){
+  const idx=STEPS.findIndex(x=>x.id===s);
+  const branched=(s==='CANCELLED'||s==='DIVERTED'||s==='CLOSED');
+  $('stepper').innerHTML=STEPS.map((st,i)=>{
+    const active=st.id===s, past=idx>=0 && i<idx && !branched;
+    const dc='sdot'+(active?(branched?' term':' active'):(past?' past':''));
+    const lc='slabel'+(active?' active':past?' past':'');
+    const lc2='sline'+(past?' past':'');
+    return `<div class="srow"><div class="sconnect"><div class="${dc}"></div>${i<STEPS.length-1?`<div class="${lc2}"></div>`:''}</div><div class="${lc}">${st.l}<small>${st.s}</small></div></div>`;
+  }).join('');
+}
+function entryClass(ev){
+  const map={DELAY_TIER_1:'fn-t1',DELAY_TIER_2:'fn-t2',DELAY_TIER_3:'fn-t3',
+    DEPARTED:'fn-life',LANDED:'fn-life',CANCELLED:'fn-t3',DIVERTED:'fn-t2',
+    BACK_ON_SCHEDULE:'fn-ok',MONITORING_ACTIVE:'fn-ok'};
+  return map[ev]||'fn-ok';
+}
+function renderTimeline(entries){
+  const scroll=$('timeline');
+  if(!entries || !entries.length){
+    scroll.innerHTML='<div class="feed-empty">Monitoring is active. Fire an event to see the brain decide.</div>';
+    return;
+  }
+  scroll.innerHTML = entries.map(e=>{
+    const t=EVENT_TEXT[e.event_type]||{l:e.event_type,n:''};
+    const cls = e.notified ? entryClass(e.event_type) : 'fn-silent';
+    const trans = (e.prev_state && e.new_state && e.prev_state!==e.new_state)
+      ? `${lbl(e.prev_state)} → ${lbl(e.new_state)}` : `${lbl(e.new_state||e.prev_state)} · no change`;
+    const badge = e.notified
+      ? '<span class="badge-notify">Notified</span>'
+      : '<span class="badge-silent">Logged silently</span>';
+    return `<div class="fentry ${cls}"><div class="ftime">${fmtTime(e.ts)}</div><div><div class="flabel">${t.l}</div><div class="ftrans">${trans}</div><div class="fnote">${t.n}</div></div><div>${badge}</div></div>`;
+  }).join('');
+}
+function setEventButtons(enabled, current){
+  document.querySelectorAll('[data-ev]').forEach(b=>{ b.disabled = !enabled || TERMINAL.has(current); });
+  $('ctrl-hint').textContent = !enabled ? 'issue a policy first'
+    : (TERMINAL.has(current) ? 'terminal state — reset to continue' : 'click to fire a real event');
+}
 
-      try {
-        const res  = await fetch('/policies', {
-          method:  'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify(body),
-        });
-        const data = await res.json();
+async function refresh(){
+  if(!policyId) return;
+  const res = await fetch(`/policies/${policyId}`);
+  if(!res.ok){ noteEl.textContent='Could not read policy status.'; noteEl.className='lookup-note err'; return; }
+  const d = await res.json();
+  $('fc-meta').textContent = `${d.flight_number} · ${d.flight_date}`;
+  updateBadge(d.current_state);
+  buildTrack(d.current_state);
+  renderTimeline(d.timeline);
+  const n = (d.notifications||[]).length;
+  const nc=$('notifications');
+  nc.textContent = n===1 ? '1 notification sent' : `${n} notifications sent`;
+  nc.style.color = n>0 ? 'var(--green)' : 'var(--slate-400)';
+  setEventButtons(true, d.current_state);
+}
 
-        if (!res.ok) {
-          throw new Error(data.detail || `HTTP ${res.status}`);
-        }
+/* Issue policy */
+$('issue-form').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  if(!$('input-consent').checked){
+    noteEl.textContent='Consent is required (DPDP §6) before a policy can be issued.';
+    noteEl.className='lookup-note err'; return;
+  }
+  $('fc-origin').textContent=($('input-origin').value.trim()||'—').toUpperCase();
+  $('fc-dest').textContent=($('input-dest').value.trim()||'—').toUpperCase();
+  const body={
+    pnr: $('input-pnr').value.trim().toUpperCase(),
+    flight_number: $('input-flight').value.trim().toUpperCase(),
+    flight_date: $('input-date').value,
+    name: $('input-name').value.trim(),
+    phone: $('input-phone').value.trim(),
+    email: $('input-email').value.trim() || null,
+    consent: true,
+  };
+  $('issue-btn').disabled=true; noteEl.textContent='Issuing policy…'; noteEl.className='lookup-note';
+  try{
+    const res=await fetch('/policies',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const data=await res.json();
+    if(!res.ok){ noteEl.textContent=(data.detail||`Error ${res.status}`); noteEl.className='lookup-note err'; return; }
+    policyId=data.policy_id;
+    try{ sessionStorage.setItem('tsp_policy_id', policyId); }catch(_){}
+    noteEl.innerHTML=`Policy <b>${policyId.slice(0,8)}…</b> issued · baseline <b>${lbl(data.baseline_state)}</b> · monitoring active. Fire events below.`;
+    noteEl.className='lookup-note ok';
+    $('payload-console').textContent='No event fired yet.';
+    await refresh();
+  }catch(err){ noteEl.textContent='Network error: '+err.message; noteEl.className='lookup-note err'; }
+  finally{ $('issue-btn').disabled=false; }
+});
 
-        policyId = data.policy_id;
-        try { sessionStorage.setItem('tsp_policy_id', policyId); } catch (_) {}
+/* Fire events */
+document.querySelectorAll('[data-ev]').forEach(btn=>{
+  btn.addEventListener('click', async ()=>{
+    if(!policyId) return;
+    const event=EVENT_MAP[btn.dataset.ev]; if(!event) return;
+    btn.disabled=true;
+    try{
+      const res=await fetch('/demo/simulate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({policy_id:policyId, event})});
+      const data=await res.json();
+      if(!res.ok){ noteEl.textContent=(data.detail||`Error ${res.status}`); noteEl.className='lookup-note err'; return; }
+      $('payload-console').textContent=JSON.stringify(data.payload ?? data, null, 2);
+      await refresh();
+    }catch(err){ noteEl.textContent='Network error: '+err.message; noteEl.className='lookup-note err'; }
+  });
+});
 
-        markActivated();
+/* Reset — a new policy must be issued (state lives in the backend) */
+$('reset-btn').addEventListener('click', ()=>{
+  policyId=null;
+  try{ sessionStorage.removeItem('tsp_policy_id'); }catch(_){}
+  $('fc-meta').textContent='No policy issued yet';
+  updateBadge('REGISTERED'); buildTrack('REGISTERED');
+  $('state-label').textContent='Awaiting issuance';
+  $('timeline').innerHTML='<div class="feed-empty">Issue a policy, then fire an event to see the brain\'s real decision.</div>';
+  $('notifications').textContent='0 notifications sent'; $('notifications').style.color='var(--slate-400)';
+  $('payload-console').textContent='No event fired yet.';
+  setEventButtons(false,'REGISTERED');
+  noteEl.textContent='Reset. Issue a new policy to begin.'; noteEl.className='lookup-note';
+});
 
-        await refresh();
-        revealDashboard();
-        startPolling();
-
-      } catch (err) {
-        ctaBtn.disabled = false;
-        if (ctaIcon) ctaIcon.style.display = '';
-        ctaLabel.textContent = 'Activate Monitoring';
-        alert(`Error: ${err.message}`);
-      }
-    });
-
-    /* ── Show the post-activation success state on the form ── */
-    function markActivated() {
-      ctaBtn.style.display = 'none';
-      formSuccess.classList.remove('hidden');
-      policyDisplay.textContent = `Policy ID: ${policyId}`;
-    }
-
-    /* ── Simulate buttons ── */
-    document.querySelectorAll('[data-event]').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        if (!policyId) return;
-        btn.disabled = true;
-        const originalText = btn.textContent;
-        btn.textContent = '…';
-
-        try {
-          const res = await fetch('/demo/simulate', {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify({ policy_id: policyId, event: btn.dataset.event }),
-          });
-          const data = await res.json();
-          if (!res.ok) {
-            throw new Error(data.detail || `HTTP ${res.status}`);
-          }
-
-          consolePre.textContent = JSON.stringify(data, null, 2);
-          await refresh();
-        } catch (err) {
-          consolePre.textContent = `// Error: ${err.message}`;
-        } finally {
-          btn.disabled  = false;
-          btn.textContent = originalText;
-        }
-      });
-    });
-
-    /* ── Date input default: today ── */
-    (() => {
-      const today = new Date().toISOString().slice(0, 10);
-      document.getElementById('f-date').value = today;
-    })();
-
-    /* ── Rehydrate after a page refresh: restore the active policy so the
-          dashboard never shows a state without its matching history. ── */
-    (async () => {
-      let saved = null;
-      try { saved = sessionStorage.getItem('tsp_policy_id'); } catch (_) {}
-      if (!saved) return;
-      try {
-        const res = await fetch(`/policies/${saved}`);
-        if (!res.ok) { sessionStorage.removeItem('tsp_policy_id'); return; }
-        policyId = saved;
-        markActivated();
-        overlay.style.display  = 'none';
-        dashboard.style.filter = 'none';
-        document.getElementById('contact-strip').classList.remove('hidden');
-        await refresh();
-        startPolling();
-      } catch (_) {
-        try { sessionStorage.removeItem('tsp_policy_id'); } catch (_) {}
-      }
-    })();
-
-    window.addEventListener('beforeunload', () => {
-      if (pollTimer) clearInterval(pollTimer);
-    });
-
-  </script>
+/* Init */
+async function init(){
+  $('input-date').value = new Date().toISOString().slice(0,10);
+  buildTrack('REGISTERED'); updateBadge('REGISTERED'); setEventButtons(false,'REGISTERED');
+  $('brain-cfg').innerHTML = 'T1 ≥ 30 min · T2 ≥ 60 min · T3 ≥ 120 min<br>Recovery buffer 15 min';
+  let saved=null; try{ saved=sessionStorage.getItem('tsp_policy_id'); }catch(_){}
+  if(saved){
+    const res=await fetch(`/policies/${saved}`);
+    if(res.ok){ policyId=saved; await refresh();
+      noteEl.textContent='Resumed monitoring for the policy from this session.'; noteEl.className='lookup-note ok'; }
+    else { try{ sessionStorage.removeItem('tsp_policy_id'); }catch(_){} }
+  }
+}
+init();
+</script>
 </body>
 </html>
