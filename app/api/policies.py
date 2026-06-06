@@ -4,6 +4,7 @@ from __future__ import annotations
 import logging
 from datetime import datetime, timezone
 
+import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlmodel import Session, select
@@ -65,6 +66,15 @@ async def create_policy(
         )
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc))
+    except httpx.HTTPError as exc:
+        # The flight-data vendor was unreachable / rejected the request (bad key, quota,
+        # timeout). Surface a clean 502 instead of a raw 500 so clients get JSON, not
+        # an "Internal Server Error" string that breaks JSON parsing on the frontend.
+        logging.getLogger(__name__).warning("issuance.provider_error", exc_info=exc)
+        raise HTTPException(
+            status_code=502,
+            detail="Flight-data provider is unavailable right now. Please try again shortly.",
+        ) from exc
 
     return CreatePolicyResponse(
         policy_id=policy_id,

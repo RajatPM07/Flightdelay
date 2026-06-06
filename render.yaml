@@ -32,12 +32,13 @@ services:
       - key: DEMO_MODE          # Keep True: serves the issuance UI (/) and the
         value: "True"           # multi-vendor live lookup/reconcile page (/live).
                                 # False -> both routes 404.
-      - key: MOCK_PROVIDERS     # False -> real FlightAware/AeroDataBox baseline +
-        value: "False"          # real alert registration + real inbound webhooks.
-      - key: MOCK_MESSAGING     # False -> real Twilio WhatsApp/SMS sends.
-        value: "False"
+      - key: MOCK_PROVIDERS     # True -> page-1 simulator uses MOCK flight data (works
+        value: "True"           # on demand, no billable alerts). The page-2 live
+                                # lookup/reconcile ignores this and always uses real keys.
+      - key: MOCK_MESSAGING     # False -> real Twilio WhatsApp/SMS sends (creds come
+        value: "False"          # from the linked env group).
       - key: APP_ENV
-        value: "production"
+        value: "demo"
       - key: LOG_LEVEL
         value: "INFO"
 
