@@ -1,11 +1,15 @@
 # Render Blueprint — TripSecure+ Flight Delay (FULLY REAL production deploy).
 # In the Render dashboard: New > Blueprint > connect this repo. Render reads this file.
 # A push to the connected branch re-syncs this blueprint and redeploys (autoDeploy: true).
-# Secrets use `sync: false` — you enter them in the dashboard; they NEVER live in git.
+#
+# SECRETS come from the linked environment group `Whatsapp_Flightdelay` (below), NOT git.
+# IMPORTANT: secrets are declared ONLY in that group — never also as `sync:false` here.
+# Service-level envVars OVERRIDE env-group values, so a blank `sync:false` placeholder
+# would shadow the group's real value with an empty string (that was the 401 bug).
 services:
   - type: web
     name: tripsecure-flightdelay-demo   # DO NOT rename — a new name = a new service,
-                                         # orphaning the API keys already in the dashboard.
+                                         # orphaning the env group + dashboard config.
     runtime: docker
     plan: free                          # NOTE: the free plan spins down after ~15 min idle
                                          # (first hit cold-starts ~50s) and the in-process
@@ -15,8 +19,14 @@ services:
     dockerfilePath: ./Dockerfile
     healthCheckPath: /health
     autoDeploy: true
+
+    # Reusable variable package holding the SECRETS (vendor API keys, webhook secrets,
+    # Twilio creds, DATABASE_URL). Linking it here is what makes a Blueprint-managed
+    # service actually read those values.
     envVarGroups:
       - name: Whatsapp_Flightdelay
+
+    # Only NON-SECRET literals live here. None of these duplicate a key in the group.
     envVars:
       # ---- Runtime mode: REAL flight data + REAL messaging --------------------
       - key: DEMO_MODE          # Keep True: serves the issuance UI (/) and the
@@ -43,32 +53,9 @@ services:
       - key: PUBLIC_WEBHOOK_BASE_URL
         value: "https://tripsecure-flightdelay-demo.onrender.com"
 
-      # ---- Persistence -------------------------------------------------------
-      # Supabase direct Postgres DSN:
-      #   postgresql+psycopg://postgres:<pwd>@db.<ref>.supabase.co:5432/postgres
-      # (URL-encode '@' in the password as %40). If left unset the app falls back to
-      # on-container SQLite, which is WIPED on every redeploy / spin-down — in-flight
-      # monitoring state and subscriptions are lost. Set this for real production.
-      - key: DATABASE_URL
-        sync: false
-
-      # ---- Vendor API keys + webhook secrets (set in dashboard) --------------
-      - key: FLIGHTAWARE_API_KEY
-        sync: false
-      - key: FLIGHTAWARE_WEBHOOK_SECRET   # signs the X-Fa-Signature on inbound alerts
-        sync: false
-      - key: AERODATABOX_API_KEY
-        sync: false
-      - key: AERODATABOX_WEBHOOK_SECRET   # path-segment secret in /webhooks/aerodatabox/{secret}
-        sync: false
-
-      # ---- Twilio ------------------------------------------------------------
-      # WhatsApp sandbox sender + trial SMS number are not secret -> kept here.
+      # ---- Twilio sender identifiers (not secret) ----------------------------
+      # The account SID / auth token are SECRET -> they live in the env group.
       - key: TWILIO_WHATSAPP_FROM
         value: "whatsapp:+14155238886"
       - key: TWILIO_SMS_FROM
         value: "+19132780553"
-      - key: TWILIO_ACCOUNT_SID
-        sync: false
-      - key: TWILIO_AUTH_TOKEN
-        sync: false
