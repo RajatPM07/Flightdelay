@@ -85,7 +85,9 @@ body{font-family:var(--font);background:var(--paper);color:var(--ink-900);
 .btn-ghost{background:transparent;color:var(--slate-600);border-color:var(--line);}
 .btn-ghost:hover{background:var(--surface-100);color:var(--ink-900);}
 .btn-lg{padding:16px 30px;font-size:16px;}
-@media(max-width:768px){.nav-links{display:none;}.nav-icon{width:34px;height:34px;border-radius:9px;}}
+@media(max-width:768px){.nav-links{display:none;}.nav-icon{width:34px;height:34px;border-radius:9px;}
+  /* Solid header bg — Samsung Internet doesn't reliably apply backdrop-filter. */
+  .topbar{background:rgb(251,250,248);}}
 
 /* ══════════════════════════════════════
    HERO

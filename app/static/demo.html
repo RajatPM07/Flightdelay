@@ -46,7 +46,17 @@ body{font-family:var(--font);background:var(--paper);color:var(--ink-900);-webki
 .nav-pg{color:var(--slate-600);text-decoration:none;font-size:14px;font-weight:600;padding:7px 14px;border-radius:var(--r-lg);transition:all .15s;}
 .nav-pg:hover{background:var(--surface-100);color:var(--ink-900);}
 .nav-pg.active{background:var(--o-50);color:var(--brand);}
-@media(max-width:560px){.nav-sub{display:none;}.nav-pg{padding:6px 10px;font-size:13px;}}
+.nav-pg{white-space:nowrap;}
+@media(max-width:560px){
+  /* Declutter the header on phones: drop the client text, keep logo + page links on one line. */
+  .nav-client,.nav-divider{display:none;}
+  .topbar .wrap{gap:10px;}
+  .nav-pages{flex-shrink:0;}
+  .nav-pg{padding:6px 10px;font-size:13px;}
+  /* Solid header bg — Samsung Internet doesn't reliably apply backdrop-filter, which let
+     scrolled content bleed through the semi-transparent bar. */
+  .topbar{background:rgb(251,250,248);}
+}
 
 /* Intro */
 .intro{padding:56px 0 44px;border-bottom:1px solid var(--line);}
@@ -87,6 +97,9 @@ body{font-family:var(--font);background:var(--paper);color:var(--ink-900);-webki
 
 /* Flight card */
 .flight-card{background:var(--grad-policy);border:1px solid #DDD8EF;border-radius:var(--r-2xl);padding:22px;box-shadow:var(--sh-lg);position:sticky;top:82px;}
+/* On a one-column phone layout the sticky card would overlap the controls below it as
+   you scroll — keep it in normal flow. (Placed after the base rule so it wins on order.) */
+@media(max-width:900px){.flight-card{position:static;top:auto;}}
 .fc-eyebrow{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--slate-400);margin-bottom:14px;}
 .fc-route{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
 .fc-iata{font-size:26px;font-weight:800;letter-spacing:-.03em;}
